@@ -1,120 +1,356 @@
 <template>
   <div>
     <!-- Invoice Section -->
-    <div class="container my-5">
+  
       <!-- Loading Indicator -->
       <div v-if="loading" class="text-center">
         <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden"> {{ $t('invoices.loading2') }}</span>
+          <span class="visually-hidden">{{ $t('invoices.loading2') }}</span>
         </div>
         <p class="mt-3">Loading invoice details...</p>
       </div>
 
       <!-- Invoice Details -->
-      <div v-else-if="invoice" class="p-4 border rounded shadow show-invoice bg-white">
-        <!-- Header Section: Company and Logo -->
-        <div class="d-flex justify-content-between align-items-start mb-4">
-          <!-- Left: Company Information -->
-          <div class="company-info">
-            <img :src="`http://localhost:8002/storage/${invoice.factor_bar_code}`" alt="Barcode" width="150" />
-            {{ invoice.factor_code }}
-            <h3>Mon Stock</h3>
+      <div v-else-if="invoice" class="show-invoice">
+
+        <div v-for="pageIndex in totalPages" :key="pageIndex" class="invoice-page">
+          <!-- Logo at the Center -->
+          <br>
+          <div class="text-center mb-4">
+            <img src="@/assets/image.png" alt="Logo" class="mb-3" width="200" />
+          </div>
+
+          <!-- Client Information on the Right -->
+          <div class="d-flex justify-content-end">
+            <div class="client-info-container">
+              <h5 class="client-title">{{ $t('invoices.billTo') }}</h5>
+              <div class="client-info-card card p-3">
+                <div class="client-info-details">
+                  <div class="info-item">{{ invoice.client.name }}</div>
+                  <div class="info-item">{{ invoice.client.address }}</div>
+                  <div class="info-item">{{ invoice.client.phone }}</div>
+                  <div class="info-item">{{ invoice.client.email }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-start table_bar">
+            <div class="text-center">
+              <h1>{{ $t('invoices.title2') }}</h1>
+            </div>
+          </div>
+
+          <!-- Total Section -->
+          <div class="text-center">
+            <table class="table factor">
+              <tbody>
+                <tr>
+                  <th><strong>{{ $t('invoices.reference') }}</strong></th>
+                  <th><strong>{{ $t('invoices.date') }}</strong></th>
+                  <th><strong>{{ $t('invoices.representative') }}</strong></th>
+                  <th><strong>{{ $t('invoices.page') }}</strong></th>
+                </tr>
+                <tr>
+                  <td>
+                    <img :src="`http://localhost:8002/storage/${invoice.factor_bar_code}`" alt="Barcode" width="150" />
+                    <div>{{ invoice.factor_code }}</div>
+                  </td>
+                  <td>
+                    <p>{{ formatDate(today) }}</p>
+                  </td>
+                  <td></td>
+                  <td>{{ pageIndex }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Invoice Items Table -->
+          <div class="invoice-items">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ $t('products.title') }}</th>
+                  <th>{{ $t('products.quantity') }}</th>
+                  <th>{{ $t('products.price') }}  ({{ $t('returns.dh') }}) </th>
+                  <th>{{ $t('products.total') }}  ({{ $t('returns.dh') }})</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, index) in getItemsForPage(pageIndex)" :key="index">
+                  <td>{{ (pageIndex - 1) * itemsPerPage + index + 1 }}</td>
+                  <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
+                  <td>{{ parseFloat(item.quantity) }} {{ item.unit }}</td>
+                  <td>{{ parseFloat(item.price).toFixed(2) }} </td>
+                  <td>{{ (parseFloat(item.total).toFixed(2)) }} </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Total Section -->
+        <div class="row total-amount">
             
-          </div>
-          <!-- Invoice Title -->
-        <div class="text-center mb-5">
-          <h1>{{ $t('invoices.title2') }}</h1>
-        </div>
-          <!-- Right: Logo and Date -->
-          <div class="text-end">
-            <img src="@/assets/image.png" alt="Logo" class="mb-4" width="150" />
-            <p>Date: {{ formatDate(today) }}</p>
-          </div>
-        </div>
+            <!-- Title Column (Left) -->
+            <div class="col-md-6 text-start title-tva">
+                <p><strong>{{ $t('invoices.invoiceTitle') }}</strong></p>
+                <div v-if="$i18n.locale === 'en'">{{ invoice.amount_in_words_en }} {{ $t('returns.dh') }}</div>
+                <div v-else-if="$i18n.locale === 'fr'">{{ invoice.amount_in_words_fr }} {{ $t('returns.dh') }}</div>
+                <div v-else>{{ invoice.amount_in_words_ar }} {{ $t('returns.dh') }}</div>
+            </div>
 
-        
+            <!-- Table Column (Right) -->
+            <div class="col-md-6">
+                <table class="table table-tva">
+                    <tbody>
+                        <tr>
+                            <th><strong>{{ $t('invoices.amount') }}</strong></th>
+                            <th><strong>{{ $t('invoices.tva') }} ({{ invoice.tva }}%)</strong></th>
+                            <th><strong>{{ $t('invoices.totalWithTVA') }}</strong></th>
+                        </tr>
+                        <tr>
+                            <td>{{ invoice.amount }}</td>
+                            <td>{{ invoice.amount_tva }}</td>
+                            <td>{{ invoice.total_amount_with_tva }} {{ $t('returns.dh') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- Client Information -->
-        <div class="client-info mb-1">
-          <h5>{{ $t('invoices.billTo') }}</h5>
-          <p>{{ invoice.client.name }}</p>
-          <p>{{ invoice.client.address }}</p>
-          <p>Phone: {{ invoice.client.phone }}</p>
-          <p>Email: {{ invoice.client.email }}</p>
-        </div>
-
-        <!-- Invoice Items Table -->
-        <div class="invoice-items">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{{ $t('products.title') }}</th>
-                <th>{{ $t('products.quantity') }}</th>
-                <th>{{ $t('products.price') }}</th>
-                <th>{{ $t('products.total') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in invoice.invoice_items" :key="index">
-                <td>{{ index + 1 }}</td>
-                <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
-                <td>{{ parseFloat(item.quantity) }}</td>
-                <td>${{ parseFloat(item.price).toFixed(2) }}</td>
-                <td>${{ (parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2) }}</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
 
-
-        <div class="text-end total-amount">
-          <!-- Amount (Subtotal) -->
-          <h4>{{ $t('invoices.amount') }} {{ invoice.amount }} {{ $t('returns.dh') }}</h4>      
-          <!-- TVA (20%) Calculation -->
-          <h5>{{ $t('invoices.tva') }} ({{ invoice.tva }}%) </h5>   
-          <!-- Total with TVA -->
-          <h4>{{ $t('invoices.totalWithTVA') }} {{ invoice.total_amount_with_tva }} {{ $t('returns.dh') }}</h4>
-        </div>
-
-        <!-- Signature Section -->
-        <div class="mt-5 mb-5">
-          <div class="text-end my-5">
-            <p> <u> {{ $t('invoices.signature') }} </u> </p>
+          <!-- Address Information -->
+          <div class="address text-center">
+            <h5> {{ $t('titleOfApp') }}</h5>
+            <p>68, Rue Nejjarine - MEKNES - Tel. : 05.35.53.06.34 ICE : 001727048000029</p>
+            <p class="mb-1">R.C.Nº: 1.594 MEKNES - C.N.S.S. Nº : 1769522 - T.V.A. Nº : 305.350 - Patente Nº : 17523121 IF. : 23428120</p>
           </div>
         </div>
-
-        <div class="address text-center mt-5">
-          <p>1234 Street Name, City, State, ZIP</p>
-          <p>Phone: (123) 456-7890, Fax: (123) 456-7891</p>
-          <p>Website: www.company.com</p>
-        </div>
-
-        <!-- Print and PDF Buttons -->
-        <div class="d-flex justify-content-between align-items-center mt-5">
-          <button class="btn btn-secondary me-2 btn-print" @click="printInvoice">
-            <i class="bi bi-printer me-2"></i> {{ $t('invoices.printInvoice') }}
-          </button>
-          <button class="btn btn-info btn-pdf" @click="downloadPDF">
-            <i class="bi bi-file-earmark-pdf me-2"></i> {{ $t('invoices.downloadPDF') }}
-          </button>
-        </div>
-
+        <hr v-if="pageIndex < totalPages" />
       </div>
-
+      
       <!-- Error State -->
       <div v-else class="text-center mt-5">
         <div class="alert alert-danger" role="alert">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage || 'Invoice not found.' }}
         </div>
       </div>
-    </div>
+   
+    
+      <!-- Print and PDF Buttons -->
+      <div class="d-flex justify-content-between align-items-center mt-5">
+        <button class="btn btn-secondary me-2 btn-print" @click="printInvoice">
+          <i class="bi bi-printer me-2"></i> {{ $t('invoices.printInvoice') }}
+        </button>
+      <!--  <button class="btn btn-secondary btn-pdf" @click="downloadPDF">
+          <i class="bi bi-file-earmark-pdf me-2"></i> {{ $t('invoices.downloadPDF') }}
+        </button> -->
+      </div>
   </div>
 </template>
 
+<style scoped>
+
+  .invoice-page {
+      position: relative;
+      border-top: 20px solid maroon;  /* Add top border */
+      border-bottom: 20px solid maroon; /* Add bottom border */
+      margin: 0 40px 0 40px;
+      background: url("@/assets/img.png") center center no-repeat; /* Center the image */
+      background-size: 500px auto; /* Adjust size; change if needed */
+  }
+
+
+  
+  /* Existing styles for th, td, tr */
+  th, td, tr {
+      border: 1px solid maroon;
+  }
+
+  th {
+      background-color: rgba(95, 189, 192, 0.479);
+  }
+
+  td{
+    background-color: rgba(255, 255, 255, 0.26);
+  }
+
+  .factor{
+    width: 60%;
+  }
+
+  .invoice-page {
+      page-break-after: always; /* Ensure each invoice page is printed on a new page */
+  }
+
+  /* Existing styles for total-amount, address, etc. */
+  .total-amount table {
+      width: 50%;
+      margin-left: auto;
+  }
+
+
+  .address {
+      margin-top: 60px; /* Keep the top margin for spacing above */
+      font-size: 12px; /* Font size */
+      color: maroon; /* Text color */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font family */
+      font-weight: bold; /* Font weight */
+      margin-bottom: 0; /* No margin below the address */
+      line-height: 1; /* Set line height to 1 to reduce spacing between lines */
+  }
+
+  .address p {
+      margin: 0; /* Remove default margins from paragraphs */
+  }
+  /* Hide print and PDF buttons during printing */
+  .no-print {
+      display: none !important;
+  }
+
+  .text-start p {
+      margin-bottom: 0;
+  }
+
+  .row{
+    margin: 0px;
+  }
+
+
+
+
+  @media print{
+    /* General settings for A4 sizing */
+    .invoice-page {
+        position: relative;
+        border-top: 20px solid maroon;
+        border-bottom: 20px solid maroon;
+        margin: 0;
+        padding: 0;
+        page-break-after: always;
+        height: 29.7cm;
+        width: 21cm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+        background: center center no-repeat !important;
+        background-size: 500px auto !important;
+        background-image: url("@/assets/img.png") !important;
+
+        visibility: visible;
+        /* Center and scale the image nicely */
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        -webkit-print-color-adjust: exact;
+   }
+
+    .show-invoice{
+      height: 29.7cm; /* Exact A4 page height */
+      width: 21cm; /* Exact A4 page width */
+    }
+
+    /* Existing styles for th, td, tr */
+    th, td, tr {
+        border: 1px solid maroon;
+    }
+
+    th {
+      background-color: rgba(95, 189, 192, 0.479) !important;
+    }
+
+    td{
+      background-color: rgba(255, 255, 255, 0.26) !important;
+    }
+  
+
+    /* Hide elements with the .no-print class */
+    .no-print {
+        display: none !important;
+    }
+
+    /* Hide everything by default, then show only invoice */
+    body * {
+        visibility: hidden;
+    }
+    .show-invoice, .show-invoice * {
+        visibility: visible;
+    }
+    .show-invoice {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    /* Page margins */
+    @page {
+        margin: 0;
+    }
+
+    /* Styling for the content to fill page */
+    body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+    }
+
+    /* Ensure table and address alignment */
+    .table-tva {
+        width: 50% !important; /* Expand table width */
+        border-collapse: collapse;
+        margin: 0 10px 10px 30px;
+    }
+    .title-tva{
+     padding-left: 30px !important;
+    }
+
+    .address {
+        font-size: 12px;
+        color: maroon;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: bold;
+        line-height: 1.1;
+        margin-top: 110px;
+        margin-bottom: 0;
+    }
+
+
+    /* Minor adjustments for right/bottom clipping */
+    .invoice-page {
+        transform: translate(-0.05cm, -0.05cm); /* Slight shift for exact fit */
+        margin-bottom: -0.1cm; /* Negative margin to prevent bottom overflow */
+        margin-right: -0.1cm; /* Negative margin to prevent right overflow */
+    }
+
+    .table_bar {
+      margin-left: 20px !important;
+      margin-right: 20px !important;
+    }
+    .invoice-items{
+      margin-left: 20px !important;
+      margin-right: 20px !important;
+    }
+    .factor{
+      margin-left: 20px !important;
+      margin-right: 20px !important;
+    }
+    .client-info-container{
+      margin-right: 20px !important;
+    }
+  }
+
+
+
+
+</style>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from '../services/axios';
 import Swal from 'sweetalert2';
 import { useRoute, useRouter } from 'vue-router';
@@ -124,21 +360,30 @@ export default {
   name: 'ShowInvoice',
   setup() {
     const invoice = ref(null);
-    const products = ref([]); // Initialize as an empty array
+    const products = ref([]);
     const productsLoading = ref(true);
     const errorMessage = ref('');
     const loading = ref(true);
     const route = useRoute();
     const router = useRouter();
-    const invoiceId = route.params.id; // Retrieve invoice ID from route parameters
-    const today = new Date(); // Current date
+    const invoiceId = route.params.id; 
+    const today = new Date(); 
 
-    // Fetch the invoice data by ID
+    const itemsPerPage = 3; // Define itemsPerPage as a constant
+    const totalPages = computed(() => {
+      if (!invoice.value || !invoice.value.invoice_items) return 1;
+      return Math.ceil(invoice.value.invoice_items.length / itemsPerPage);
+    });
+
+    const formatDate = (date) => {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Intl.DateTimeFormat('en-US', options).format(new Date(date));
+    };
+
     const fetchInvoiceData = async () => {
       try {
         const response = await axios.get(`/invoices/${invoiceId}`);
         invoice.value = response.data;
-      //  console.log("Data : ", JSON.stringify(invoice.value));
       } catch (error) {
         console.error('Error fetching invoice:', error);
         errorMessage.value = 'Failed to fetch invoice data.';
@@ -148,164 +393,96 @@ export default {
       }
     };
 
-    // Fetch all products to map product_id to product name
     const fetchProducts = async () => {
       try {
         const response = await axios.get('/products');
-        //console.log('Products data:', response.data); // Log API response for debugging
-        // Assign the items array from the response to products.value
-        products.value = Array.isArray(response.data.items) ? response.data.items : []; 
-        
+        products.value = Array.isArray(response.data.items) ? response.data.items : [];
       } catch (error) {
         console.error('Error fetching products:', error);
         Swal.fire('Error', 'Failed to fetch products.', 'error');
       } finally {
-        productsLoading.value = false; // Set loading to false in the end
+        productsLoading.value = false; 
       }
     };
 
-    // Get product name by product_id
     const getProductName = (productId) => {
-     // console.log('Current products.value:', products.value); // Log current products value
-      if (!Array.isArray(products.value)) return 'Unknown Product'; // Ensure it's an array
-      const product = products.value.find((p) => p.id === Number(productId)); 
+      if (!Array.isArray(products.value)) return 'Unknown Product'; 
+      const product = products.value.find((p) => p.id === Number(productId));
       return product ? product.name : 'Unknown Product';
     };
 
-    // Navigate to the edit invoice page
-    const editInvoice = () => {
-      router.push(`/invoices/${invoiceId}/edit`);
+    const getItemsForPage = (pageIndex) => {
+      const start = (pageIndex - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      return invoice.value.invoice_items.slice(start, end);
     };
 
-    // Helper function to format dates
-    const formatDate = (dateStr) => {
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Date(dateStr).toLocaleDateString(undefined, options);
-    };
-
-    // Helper function to capitalize the first letter of a string
-    const capitalizeFirstLetter = (string) => {
-      if (!string) return '';
-      return string.charAt(0).toUpperCase() + string.slice(1);
-    };
-
-    // Print the invoice
-      const printInvoice = () => {
+    const printInvoice = () => {
       const invoiceElement = document.querySelector('.show-invoice');
-      const originalContent = document.body.innerHTML; // Save the original body content
+      const addressElement = document.querySelector('.address');
+      const originalContent = document.body.innerHTML; 
 
-      // Temporarily hide the print and PDF buttons
+      // Add the 'no-print' class to buttons to hide them
       document.querySelectorAll('.btn-print, .btn-pdf').forEach(btn => btn.classList.add('no-print'));
 
-      // Replace the body content with only the invoice section for printing
+      // Check if the address is empty and add 'empty-address' class if it is
+      if (addressElement && addressElement.textContent.trim() === '') {
+          addressElement.classList.add('empty-address');
+      }
+
+      // Set body content to only the invoice element for printing
       document.body.innerHTML = invoiceElement.outerHTML;
 
       // Trigger print
       window.print();
 
-      // Restore the original content after printing
+      // Restore original content and reload page to reset classes
       document.body.innerHTML = originalContent;
-
-      // Reload the page to reinitialize Vue components
-      window.location.reload(); // Refresh the page to restore the original state
+      window.location.reload(); 
     };
 
-
-
-   // Download the invoice as PDF
     const downloadPDF = () => {
       const invoiceElement = document.querySelector('.show-invoice');
 
-      // Temporarily hide the print and PDF buttons for the PDF generation
-      document.querySelectorAll('.btn-print, .btn-pdf').forEach(btn => btn.classList.add('no-pdf'));
+      // Add the class for PDF download
+      invoiceElement.classList.add('pdf-download');
 
       const options = {
-        margin: 1,
-        filename: `invoice-${invoiceId}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+          margin: 0.5,
+          filename: 'invoice.pdf',
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
       };
 
-      // Generate the PDF
-      html2pdf().from(invoiceElement).set(options).save().finally(() => {
-        // Restore the buttons after PDF generation
-        document.querySelectorAll('.btn-print, .btn-pdf').forEach(btn => btn.classList.remove('no-pdf'));
+      html2pdf().from(invoiceElement).set(options).save().then(() => {
+          // Remove the class after downloading
+          invoiceElement.classList.remove('pdf-download');
       });
     };
 
-    const getBarcodeUrl = (barcodePath) => {
-
-      
-
-  if (!barcodePath) return ''; // Return empty if there's no barcode path
-  console.log("->",`/storage/${barcodePath}`);
-  return `/storage/${barcodePath}`; // Correct path to your Laravel storage
-};
 
     onMounted(() => {
-      fetchProducts();
       fetchInvoiceData();
+      fetchProducts();
     });
 
     return {
       invoice,
-      getBarcodeUrl,
       products,
-      errorMessage,
       loading,
-      editInvoice,
-      getProductName,
+      errorMessage,
+      today,
       formatDate,
       printInvoice,
-      downloadPDF, // Return the new downloadPDF method
-      today, // Current date for the additional page
-      capitalizeFirstLetter,
+      downloadPDF,
+      getProductName,
+      getItemsForPage,
+      totalPages,
+      itemsPerPage, // Make sure itemsPerPage is included here
     };
   },
+
+
 };
 </script>
 
-<style scoped>
-  @media print {
-    /* Hide the print and PDF buttons during printing */
-    .btn-print, .btn-pdf {
-      display: none !important;
-    }
-
-    /* Hide any other unnecessary elements for print */
-    .navbar, .footer, .sidebar {
-      display: none !important;
-    }
-
-    /* Adjust invoice styling for print */
-    .show-invoice {
-      margin: 0;
-      padding: 20px;
-      width: 100%;
-    }
-  }
-
-  /* Optionally hide buttons during PDF export */
-  .no-pdf {
-    display: none;
-  }
-
-  .company-info p, .client-info p{
-    line-height: 1; /* Adjust to desired spacing */
-  }
-
-  .address{
-    padding: 10px;
-    font-size: 0.8rem;
-  }
-  .address p{
-    line-height: 0.3;
-  }
-
-  .address div p {
-    margin: 0; /* Remove default margin to avoid extra space between lines */
-  }
-</style>
-
-  

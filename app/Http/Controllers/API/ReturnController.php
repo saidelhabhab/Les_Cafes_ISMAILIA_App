@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use App\Models\ReturnItem;
 use App\Models\Invoice;
@@ -27,57 +28,88 @@ class ReturnController extends Controller
      */
    
      public function store(Request $request)
-     {
-         $request->validate([
-             'invoice_id' => 'required|exists:invoices,id',
-             'items' => 'required|array',
-             'items.*.product_id' => 'required|exists:products,id',
-             'items.*.quantity' => 'required|integer|min:1',
-             'total_amount_with_tva' => 'required|numeric',
-             'items.*.price' => 'required|numeric',
-             'items.*.unit' => 'required|string|in:ton,kg,g',
-             'deleted_invoice_item_ids' => 'array', // Optional, for removed items
-         ]);
-     
-         DB::transaction(function () use ($request) {
-             // Update the invoice with the new total amount
-             $invoice = Invoice::find($request->invoice_id);
-             $invoice->total_amount_with_tva = $request->total_amount_with_tva;
-              // Update total amount with TVA
-            $invoice->total_amount_with_tva = $request->total_amount_with_tva;
+    {
+        $request->validate([
+            'invoice_id' => 'required|exists:invoices,id',
+            'items' => 'required|array',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric',
+            'total_amount_with_tva' => 'required|numeric',
+            'items.*.price' => 'required|numeric',
+            'items.*.unit' => 'required|string|in:ton,kg,g',
+            'deleted_invoice_item_ids.*' => 'exists:invoice_items,id', // Optional, for removed items
+        ]);
 
-            // Loop through items and subtract from invoice amount
+        DB::transaction(function () use ($request) {
+            // Fetch the invoice and retrieve TVA rate
+            $invoice = Invoice::findOrFail($request->invoice_id);
+            $tvaRate = $invoice->tva /100; // Extracted TVA rate from invoice once
+
+            // Fetch the client once to avoid re-fetching in each loop iteration
+            $client = Client::findOrFail($invoice->client_id);
+            $totalDeductionForClient = 0;  // Track total deduction across items
+
             foreach ($request->items as $item) {
-                $invoice->amount -= ($item['price'] * $item['quantity']);
-            }
-            $invoice->save();
+                // Convert quantity to kg if necessary
+                $quantityInKg = $item['quantity'];
+                if ($item['unit'] === 'ton') {
+                    $quantityInKg *= 1000; // Convert tons to kilograms
+                } elseif ($item['unit'] === 'g') {
+                    $quantityInKg /= 1000; // Convert grams to kilograms
+                }
 
-            
-             // Loop through the items and create return items
-             foreach ($request->items as $item) {
-                 $returnItem = new ReturnItem();
-                 $returnItem->invoice_id = $request->invoice_id;
-                 $returnItem->product_id = $item['product_id'];
-                 $returnItem->quantity = $item['quantity'];
-                 $returnItem->unit = $item['unit'];
-                 $returnItem->save();
-     
-                 // Update product quantity in stock
-                 $product = Product::find($item['product_id']);
-                 $product->quantity += $item['quantity']; // Increase stock on return
-                 $product->save();
-             }
-     
-             // If there are deleted invoice item IDs, remove them
-         //    if ($request->has('deleted_invoice_item_ids')) {
-          //       InvoiceItem::destroy($request->deleted_invoice_item_ids); // Delete old invoice items
-          //   }
-         });
-     
-         return response()->json([
-             'message' => 'Return created successfully!',
-         ], 201);
-     }
+                // Calculate the total price for the item
+                $itemTotalPrice = $item['price'] * $quantityInKg;
+
+                // Calculate TVA if applicable
+                $tvaAmount = 0;
+                if ($tvaRate > 0) {
+                    $tvaAmount = $itemTotalPrice * $tvaRate;
+                }
+
+                // Deduct item total price and TVA from invoice amounts
+                $invoice->amount -= $itemTotalPrice;
+                $invoice->total_amount_with_tva -= ($itemTotalPrice + $tvaAmount);
+
+                // Adjust final_price if applicable
+                if (isset($invoice->final_price)) {
+                    $invoice->final_price -= ($itemTotalPrice + $tvaAmount);
+                }
+
+                // Accumulate deduction for the client’s final_price
+                $totalDeductionForClient += ($itemTotalPrice + $tvaAmount);
+
+                $invoice->save();
+
+                // Create the return item
+                $returnItem = new ReturnItem();
+                $returnItem->invoice_id = $request->invoice_id;
+                $returnItem->product_id = $item['product_id'];
+                $returnItem->quantity = $item['quantity'];
+                $returnItem->unit = $item['unit'];
+                $returnItem->save();
+
+                // Update product quantity in stock in kilograms
+                $product = Product::find($item['product_id']);
+                $product->quantity += $quantityInKg; // Increase stock with converted quantity in kg
+                $product->save();
+            }
+
+            // Deduct the accumulated amount from the client’s final_price once
+            $client->final_price -= $totalDeductionForClient;
+            $client->save();
+
+            // Remove deleted invoice items if specified
+            if ($request->has('deleted_invoice_item_ids')) {
+                InvoiceItem::destroy($request->deleted_invoice_item_ids);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Return created successfully!',
+        ], 201);
+    }
+
      
 
     // Display the specified resource.
@@ -102,21 +134,6 @@ class ReturnController extends Controller
         $returnItem->delete();
 
         return response()->json(['message' => 'Return deleted successfully'], 200);
-    }
-
-
-    private function convertToKg($quantity, $unit)
-    {
-        switch ($unit) {
-            case 'ton':
-                return $quantity * 1000; // 1 ton = 1000 kg
-            case 'kg':
-                return $quantity; // already in kg
-            case 'g':
-                return $quantity / 1000; // convert grams to kg
-            default:
-                return 0; // handle unknown units
-        }
     }
 
 
@@ -149,6 +166,8 @@ class ReturnController extends Controller
     
             // Find the invoice item and decrease its quantity
             $invoiceItem = InvoiceItem::findOrFail($invoiceItemId);
+
+
             
             // Convert the return quantity to kilograms if necessary
             $unit = $invoiceItem->unit; // Assuming 'unit' column exists in invoice_items
@@ -179,9 +198,37 @@ class ReturnController extends Controller
     
             // Update the invoice amounts
             $invoice = Invoice::findOrFail($invoiceId);
+            $tvaRate = $invoice->tva /100; // Extracted TVA rate from invoice once
+
+            // Fetch the client once to avoid re-fetching in each loop iteration
+            $client = Client::findOrFail($invoice->client_id);
+            $totalDeductionForClient = 0;  // Track total deduction across items
+
+
+            // Calculate TVA if applicable
+            $tvaAmount = 0;
+            if ($tvaRate > 0) {
+                $tvaAmount = $totalDeduction * $tvaRate;
+            }
+
+            // Deduct item total price and TVA from invoice amounts
             $invoice->amount -= $totalDeduction;
-            $invoice->total_amount_with_tva -= $totalDeduction;
+            $invoice->total_amount_with_tva -= ($totalDeduction + $tvaAmount);
+
+            // Adjust final_price if applicable
+            if (isset($invoice->final_price)) {
+                $invoice->final_price -= ($totalDeduction + $tvaAmount);
+            }
+
+            // Accumulate deduction for the client’s final_price
+            $totalDeductionForClient += ($totalDeduction + $tvaAmount);
+
             $invoice->save();
+
+            // Deduct the accumulated amount from the client’s final_price once
+            $client->final_price -= $totalDeductionForClient;
+            $client->save();
+
     
             // If quantity in invoice item is zero or less, delete it; otherwise, save
             if ($invoiceItem->quantity <= 0) {
@@ -189,6 +236,8 @@ class ReturnController extends Controller
             } else {
                 $invoiceItem->save();
             }
+
+            
     
             // Create a new return record including invoice_id
             ReturnItem::create([

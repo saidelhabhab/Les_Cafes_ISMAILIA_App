@@ -1,61 +1,124 @@
 <template>
   <div class="container new-invoice">
-    <h1 class="text-center mb-4">Add New Invoice</h1>
+    <h1 class="text-center mb-4">{{  $t('invoices.addNewInvoice') }}</h1>
 
     <!-- Add Invoice Form -->
     <form @submit.prevent="handleSubmit" class="p-4 border rounded shadow">
       <div class="mb-3">
-        <label for="client_id" class="form-label">Client:</label>
-        <select v-model="form.client_id" class="form-select" id="client_id" required>
-          <option disabled value="">Select a client</option>
-          <option v-for="client in clients" :key="client.id" :value="client.id">
-            {{ client.name }}
-          </option>
-        </select>
+        <label for="client_id" class="form-label">
+          <i class="bi bi-person-badge me-2"></i> {{  $t('invoices.client') }}
+        </label>
+        <div class="d-flex align-items-center">
+          <select v-model="form.client_id" class="form-select" id="client_id" required>
+            <option disabled value="">{{ $t('invoices.selectClient')}}</option>
+            <option v-for="client in clients" :key="client.id" :value="client.id">
+              {{ client.name }}
+            </option>
+          </select>
+          <button type="button" class="btn custom-button ms-3" @click="showAddModal = true">
+            <i class="bi bi-plus-circle me-1"></i> {{  $t('clients.addNewClient') }}
+          </button>
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="due_date" class="form-label">Due Date:</label>
-        <input type="date" style="max-width: 30%" v-model="form.due_date" class="form-control" id="due_date" required />
+      <!-- Add/Edit Client Modal -->
+      <div
+        v-if="showAddModal"
+        class="modal fade show d-block"
+        tabindex="-1"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="bi bi-person-plus me-2"></i>
+                {{ showAddModal ? $t('clients.modalTitleAdd') : $t('clients.modalTitleEdit') }}
+              </h5>
+              <button type="button" class="btn-close" @click="closeModal"></button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="addNewClient">
+                <div class="mb-3">
+                  <label for="cin" class="form-label">
+                    <i class="bi bi-card-text me-2"></i>{{ $t('clients.cin') }}:
+                  </label>
+                  <input type="text" v-model="newClient.cin" class="form-control" id="cin" required />
+                </div>
+                <div class="mb-3">
+                  <label for="name" class="form-label">
+                    <i class="bi bi-person me-2"></i>{{ $t('clients.name') }}:
+                  </label>
+                  <input type="text" v-model="newClient.name" class="form-control" id="name" required />
+                </div>
+                <div class="mb-3">
+                  <label for="email" class="form-label">
+                    <i class="bi bi-envelope me-2"></i>{{ $t('clients.email') }}:
+                  </label>
+                  <input type="email" v-model="newClient.email" class="form-control" id="email" required />
+                </div>
+                <div class="mb-3">
+                  <label for="phone" class="form-label">
+                    <i class="bi bi-telephone me-2"></i>{{ $t('clients.phone') }}:
+                  </label>
+                  <input type="tel" v-model="newClient.phone" class="form-control" id="phone" required />
+                </div>
+                <div class="mb-3">
+                  <label for="address" class="form-label">
+                    <i class="bi bi-geo-alt me-2"></i>{{ $t('clients.address') }}:
+                  </label>
+                  <textarea v-model="newClient.address" class="form-control" id="address"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success w-100">
+                  <i class="bi bi-save me-1"></i> {{ showAddModal ? $t('clients.addClient') : $t('clients.updateClient') }}
+                </button>
+              </form>
+              <p v-if="errorMessage" class="text-danger mt-3">{{ errorMessage }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="payment_type" class="form-label">Payment Type:</label>
-        <select v-model="form.payment_type" class="form-select" id="payment_type" required>
-          <option disabled value="">Select payment type</option>
-          <option value="cash">Cash</option>
-          <option value="check">Check</option>
+
+      <div class="mb-3" style="width: 30%;">
+        <label for="due_date" class="form-label">{{  $t('invoices.dueDate') }}</label>
+        <input type="date" v-model="form.due_date" class="form-control" id="due_date" required />
+      </div>
+
+      <div class="mb-3" >
+        <label for="payment_type" class="form-label">{{  $t('invoices.paymentType') }}</label>
+        <select style="width: 30%;" v-model="form.payment_type" class="form-select" id="payment_type" required>
+          <option disabled value="">{{  $t('invoices.selectPaymentType') }}</option>
+          <option value="cash">{{  $t('invoices.cash') }}</option>
+          <option value="check">{{  $t('invoices.check') }}</option>
         </select>
       </div>
 
       <!-- Conditionally render the date input for "Check" payment method -->
       <div v-if="form.payment_type === 'check'">
-        <label for="checkDate">Date of Cashing a Check:</label>
+        <label for="checkDate"  class="form-label">{{  $t('invoices.checkDate') }}</label>
         <input type="date" v-model="form.checkDate" style="max-width: 30%" class="form-control" id="checkDate" required />
       </div>
 
-      <h5 class="mt-4">Invoice Items</h5>
+      <h5 class="mt-4">{{  $t('invoices.invoiceItems') }}</h5>
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Product</th>
-            <th>Price ($)</th>
-            <th>Quantity</th>
-            <th>unit</th>
-            <th>Total ($)</th>
-            <th>Actions</th>
+            <th>{{  $t('invoices.product') }}</th>
+            <th>{{  $t('invoices.price') }}</th>
+            <th>{{  $t('invoices.quantity') }}</th>
+            <th>{{  $t('invoices.unit') }}</th>
+            <th>{{  $t('invoices.total') }}</th>
+            <th>{{  $t('invoices.actions') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(item, index) in form.invoice_items" :key="index">
             <td>
               <select v-model="item.product_id" class="form-select" @change="updatePrice(item)" required>
-                <option disabled value="">Select a product</option>
-                <option 
-                  v-for="product in availableProducts(index)" 
-                  :key="product.id" 
-                  :value="product.id"
-                >
+                <option disabled value="">{{  $t('invoices.selectProduct') }}</option>
+                <option v-for="product in availableProducts(index)" :key="product.id" :value="product.id">
                   {{ product.name }} (Q :{{ product.quantity }})
                 </option>
               </select>
@@ -63,16 +126,8 @@
             <td>
               <span>{{ item.price.toFixed(2) }}</span>
             </td>
-            
             <td>
-              <input 
-                type="number" 
-                v-model.number="item.quantity" 
-                class="form-control" 
-                min="1" 
-                step="1" 
-                required 
-              />
+              <input type="number" v-model.number="item.quantity" class="form-control" min="1" step="0.1" required />
             </td>
             <td>
               <select v-model="item.unit" class="form-select" required>
@@ -85,52 +140,49 @@
               {{ calculateTotal(item) }}
             </td>
             <td>
-              <button type="button" class="btn btn-sm btn-danger" @click="removeInvoiceItem(index)">Remove</button>
+              <button type="button" class="btn btn-sm btn-danger" @click="removeInvoiceItem(index)">{{  $t('invoices.remove') }}</button>
             </td>
           </tr>
         </tbody>
-
       </table>
 
-      <button type="button" class="btn btn-secondary" @click="addInvoiceItem">Add Item</button>
+      <button type="button" class="btn btn-secondary" @click="addInvoiceItem">{{  $t('invoices.addItem') }}</button>
 
       <!-- Amount (Automatically Calculated) -->
-      <div class="mb-3">
-        <label for="amount" class="form-label">Amount ($):</label>
+      <div class="mb-3 mt-3">
+        <label for="amount" class="form-label">{{  $t('invoices.amount') }}</label>
         <input type="number" v-model.number="amount" class="form-control" id="amount" readonly />
       </div>
 
       <div class="mb-3">
-        <label for="tva" class="form-label">TVA (%):</label>
+        <label for="tva" class="form-label">{{  $t('invoices.tva') }}</label>
         <input type="number" v-model.number="form.tva" class="form-control" id="tva" min="0" step="0.01" />
       </div>
 
       <!-- Total Amount (Automatically Calculated) -->
       <div class="mb-3">
-        <label for="total-amount" class="form-label">Total Amount ($):</label>
+        <label for="total-amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
         <input type="number" v-model.number="totalAmountWithTva" class="form-control" id="total-amount" readonly />
       </div>
 
-      <div class="mb-3">
-        <label for="final_price" class="form-label">Final Price ($):</label>
-        <input type="number" v-model.number="form.final_price" class="form-control" id="final_price" min="0" step="0.01" required />
-      </div>
+
 
       <div class="mb-3">
-        <label for="remaining_price" class="form-label">Remaining Price ($):</label>
+        <label for="remaining_price" class="form-label">{{  $t('invoices.remainingPrice') }}</label>
         <input type="number" v-model.number="form.remaining_price" class="form-control" id="remaining_price" min="0" step="0.01" required />
       </div>
 
-      <div class="mb-3">
-        <label for="status" class="form-label">Status:</label>
+      <div class="mb-3" style="width: 30%">
+        <label for="status" class="form-label" >{{  $t('invoices.status') }}</label>
         <select v-model="form.status" class="form-select" id="status" required>
-          <option disabled value="">Select status</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
+          <option disabled value="">{{  $t('invoices.selectStatus') }}</option>
+          <option value="paid">{{  $t('invoices.paid') }}</option>
+          <option value="pending">{{  $t('invoices.pending') }}</option>
         </select>
       </div>
 
-      <button type="submit" class="btn btn-success mt-3">Save Invoice</button>
+      <button type="submit" class="btn btn-success mt-3">{{  $t('invoices.saveInvoice') }}</button>
+
 
       <p v-if="errorMessage" class="text-danger mt-3">{{ errorMessage }}</p>
     </form>
@@ -145,11 +197,14 @@
 
 
   export default {
+  methods: {
+  },
     name: 'NewInvoice',
     setup() {
       const clients = ref([]);
       const products = ref([]);
       const router = useRouter();
+      const showAddModal = ref(false);
 
       const form = ref({
         client_id: '',
@@ -157,7 +212,6 @@
         total_amount_with_tva: 0,
         status: '',
         due_date: '',
-        final_price: 0,
         remaining_price: 0,
         payment_type: '',
         checkDate: '',
@@ -165,14 +219,49 @@
         invoice_items: [
           {
             product_id: '',
-            quantity: 1,
+            quantity: 0,
             unit: '', 
             price: 0,
             total: 0,
           },
         ],
+        amount_in_words_en: '', // New field for English
+        amount_in_words_fr: '', // New field for French
+        amount_in_words_ar: '', // New field for Arabic
       });
       const errorMessage = ref('');
+
+        // New Client Form
+      const newClient = ref({
+        cin: '',
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+      });
+
+       // Add New Client
+       const addNewClient = async () => {
+        if (!newClient.value.cin || !newClient.value.name || !newClient.value.email || !newClient.value.phone) {
+            Swal.fire('Error', 'Please fill all client details.', 'error');
+            return;
+        }
+
+        try {
+            const response = await axios.post('/clients', newClient.value);
+            clients.value.push(response.data); // Update client list with the new client
+            form.value.client_id = response.data.id; // Set new client ID in form
+            Swal.fire('Success', 'Client added successfully!', 'success');
+            newClient.value = { id: null, cin: '', name: '', email: '', phone: '', address: '' }; // Reset new client form
+            closeModal(); // Close the modal after successful addition
+        } catch (error) {
+            console.error('Error adding new client:', error);
+            // Check if the error response has data and display it
+            const message = error.response?.data?.message || 'Failed to add new client.';
+            Swal.fire('Error', message, 'error');
+        }
+    };
+
 
       // Fetch all clients from the API
       const fetchClients = async () => {
@@ -294,10 +383,7 @@
           errorMessage.value = 'Please select a date for cashing the check.';
           return false;
         }
-        if (form.value.final_price < 0) {
-          errorMessage.value = "Final Price must be a positive number.";
-          return false;
-        }
+
         if (form.value.remaining_price < 0) {
           errorMessage.value = "Remaining Price must be a positive number.";
           return false;
@@ -324,6 +410,111 @@
         return true;
       };
 
+
+      // Utility functions to convert numbers to words (same as before)
+      const numberToWordsEN = (num) => {
+          const words = [
+              '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+              'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen',
+              'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'
+          ];
+          if (num < 20) return words[num];
+          if (num < 100) return words[20 + Math.floor(num / 10) - 2] + (num % 10 !== 0 ? '-' + words[num % 10] : '');
+          if (num < 1000) return words[Math.floor(num / 100)] + ' hundred' + (num % 100 !== 0 ? ' and ' + numberToWordsEN(num % 100) : '');
+          if (num < 1000000) return numberToWordsEN(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWordsEN(num % 1000) : '');
+          if (num < 1000000000) return numberToWordsEN(Math.floor(num / 1000000)) + ' million' + (num % 1000000 !== 0 ? ' ' + numberToWordsEN(num % 1000000) : '');
+          return 'Number too large';
+      };
+
+      const numberToWordsFR = (num) => {
+          const words = [
+              '', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
+              'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf',
+              'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'
+          ];
+          if (num < 20) return words[num];
+          if (num < 100) return words[20 + Math.floor(num / 10) - 2] + (num % 10 !== 0 ? (num < 80 ? '-' : ' ') + words[num % 10] : '');
+          if (num < 1000) return words[Math.floor(num / 100)] + ' cent' + (num % 100 !== 0 ? ' ' + numberToWordsFR(num % 100) : '');
+          if (num < 1000000) return numberToWordsFR(Math.floor(num / 1000)) + ' mille' + (num % 1000 !== 0 ? ' ' + numberToWordsFR(num % 1000) : '');
+          if (num < 1000000000) return numberToWordsFR(Math.floor(num / 1000000)) + ' million' + (num % 1000000 !== 0 ? ' ' + numberToWordsFR(num % 1000000) : '');
+          return 'Nombre trop grand';
+      };
+
+      const numberToWordsAR = (num) => {
+          const units = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+          const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+          const tens = ['', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+          if (num < 10) return units[num];
+          if (num < 20) return teens[num - 10];
+          if (num < 100) {
+              const tenPart = Math.floor(num / 10);
+              const unitPart = num % 10;
+              return (unitPart !== 0 ? units[unitPart] + ' و ' : '') + (tenPart > 0 ? tens[tenPart - 1] : '');
+          }
+          if (num < 1000) {
+              const hundredPart = Math.floor(num / 100);
+              const remainder = num % 100;
+              const hundredText = hundredPart === 2 ? 'مائتان' : (hundredPart > 1 ? units[hundredPart] + ' مئة' : 'مئة');
+              return hundredText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          if (num < 1000000) {
+              const thousandPart = Math.floor(num / 1000);
+              const remainder = num % 1000;
+              const thousandText = thousandPart === 1 ? 'ألف' : (thousandPart === 2 ? 'ألفان' : numberToWordsAR(thousandPart) + ' آلاف');
+              return thousandText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          if (num < 1000000000) {
+              const millionPart = Math.floor(num / 1000000);
+              const remainder = num % 1000000;
+              const millionText = millionPart === 1 ? 'مليون' : (millionPart === 2 ? 'مليونان' : numberToWordsAR(millionPart) + ' ملايين');
+              return millionText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          return 'رقم كبير جداً';
+      };
+
+      // Function to convert decimal numbers to words with tenths and hundredths
+      const numberToWordsWithDecimalsEN = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsEN(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "tenth" : "hundredth";
+              const decimalWords = numberToWordsEN(decimalNumber);
+              return `${words} and ${decimalWords} ${unit}${decimalNumber > 1 ? 's' : ''}`;
+          }
+          return words;
+      };
+
+      const numberToWordsWithDecimalsFR = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsFR(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "dixième" : "centième";
+              const decimalWords = numberToWordsFR(decimalNumber);
+              return `${words} et ${decimalWords} ${unit}${decimalNumber > 1 ? 's' : ''}`;
+          }
+          return words;
+      };
+
+      const numberToWordsWithDecimalsAR = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsAR(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "عُشر" : "جزء من المائة";
+              const decimalWords = numberToWordsAR(decimalNumber);
+              return `${words} و ${decimalWords} ${unit}`;
+          }
+          return words;
+      };
+
+      
+      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(totalAmountWithTva.value));
+      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(totalAmountWithTva.value));
+      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(totalAmountWithTva.value));
+
+
       const handleSubmit = async () => {
         // Validate the form before submitting
         if (!validateForm()) {
@@ -333,6 +524,12 @@
         // Set the computed amounts before submission
         form.value.amount = parseFloat(amount.value);
         form.value.total_amount_with_tva = parseFloat(totalAmountWithTva.value);
+
+        // Set the computed values in the form
+        form.value.amount_in_words_en = amountInWordsEN.value;
+        form.value.amount_in_words_fr = amountInWordsFR.value;
+        form.value.amount_in_words_ar = amountInWordsAR.value;
+          
 
         // Remove 'total' from each invoice item before sending
         const payload = {
@@ -345,7 +542,7 @@
           })),
         };
 
-       // console.log('data ==> :', JSON.stringify(payload));
+      // console.log('data ==> :', JSON.stringify(payload));
 
         try {
           const response = await axios.post('/invoices', payload); // Uncommented Axios request
@@ -386,24 +583,31 @@
           status: '',
           due_date: '',
           checkDate: '',
-          final_price: 0,
           remaining_price: 0,
           payment_type: '',
-          
           tva: 0,
           invoice_items: [
             {
               product_id: '',
               unit: '', 
-              quantity: 1,
+              quantity: 0,
               price: 0,
               total: 0,
             },
           ],
+          amount_in_words_en: '', // New field for English
+          amount_in_words_fr: '', // New field for French
+          amount_in_words_ar: '', // New field for Arabic
         };
         errorMessage.value = '';
       };
 
+
+      const closeModal = () => {
+      showAddModal.value = false;
+      newClient.value = { id: null, cin: '', name: '', email: '', phone: '', address: '' };
+      errorMessage.value = '';
+    };
       // Fetch data when the component is mounted
       onMounted(() => {
         fetchClients();
@@ -425,6 +629,13 @@
         totalAmountWithTva,
         updateItemTotal,
         convertToKg,
+        amountInWordsEN,
+        amountInWordsFR,
+        amountInWordsAR,
+        newClient,
+        addNewClient,
+        showAddModal,
+        closeModal,
       };
     },
   };
@@ -454,5 +665,19 @@
 
   .is-invalid + .invalid-feedback {
     display: block;
+  }
+  .custom-button {
+    color: #007bff; /* Text color */
+    background-color: transparent; /* Transparent background */
+    border: 2px solid #007bff; /* Initial transparent border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 1px 10px; /* Padding for button */
+    text-decoration: none; /* No underline */
+    transition: border-color 0.3s, color 0.3s; /* Smooth transitions */
+  }
+
+  .custom-button:hover {
+    color: rgb(6, 119, 44); /* Change text color on hover */
+    border-color: rgb(6, 119, 44)/* Change border color on hover */
   }
 </style>

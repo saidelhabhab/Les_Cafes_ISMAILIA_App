@@ -15,9 +15,9 @@
       <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
     </select>
 
-    <h3>{{ $t('analytics.totalAmount', { year: selectedYear, amount: totalAmount }) }}</h3> <!-- Display total amount -->
+    <h3> <strong>{{ $t('analytics.totalAmount', { year: selectedYear, amount: totalAmount }) }}</strong></h3> <!-- Display total amount -->
 
-    <h3>{{ $t('analytics.salesBarChart') }}</h3>
+    <h3 style="color: blue;" class="mt-5">{{ $t('analytics.salesBarChart') }}</h3>
     <apexchart
       type="bar"
       height="350"
@@ -105,6 +105,7 @@ export default {
       try {
         const response = await axios.get('/invoices/years'); // Fetch years from the API
         this.years = response.data; // Populate the years array
+       // console.log("response.data ==> ", response.data)
       } catch (error) {
         console.error('Error fetching years:', error);
       }
@@ -116,6 +117,7 @@ export default {
         });
         const salesData = Object.values(response.data.monthly_data);
 
+       // console.log("salesData ==> ", salesData)
         // Assign data to bar and line series
         this.barSeries[0].data = salesData; // Assuming the same data for both charts
         this.lineSeries[0].data = salesData; // Update this if you have different logic

@@ -2,6 +2,12 @@
   <div :dir="currentLanguage === 'ar' ? 'rtl' : 'ltr'" class="main-layout">
     <header>
       <nav>
+        <!-- Logo -->
+        <router-link to="/" class="logo-link">
+          <img src="@/assets/image.png" alt="Logo" class="logo" />
+        </router-link>
+
+        <!-- Navigation Links -->
         <router-link to="/">{{ $t('dashboardNav') }}</router-link>
         <router-link to="/purchases">{{ $t('purchasesNav') }}</router-link>
         <router-link to="/products">{{ $t('productsNav') }}</router-link>
@@ -9,11 +15,12 @@
         <router-link to="/invoices">{{ $t('invoicesNav') }}</router-link>
         <router-link to="/returns">{{ $t('returnsNav') }}</router-link>
         <router-link to="/analytics">{{ $t('analyticsNav') }}</router-link>
-        <router-link to="/categories">{{ $t('categoriesNav') }}</router-link>
         <router-link to="/profile">{{ $t('profileNav') }}</router-link>
+
+        <!-- Logout Button -->
         <button @click="logout">{{ $t('logout') }}</button>
 
-        <!-- Improved Language Switcher with Styled Select Dropdown -->
+        <!-- Language Switcher -->
         <div class="language-switcher">
           <select v-model="currentLanguage" @change="changeLanguage($event.target.value)" class="styled-select">
             <option value="en">English</option>
@@ -24,14 +31,17 @@
         </div>
       </nav>
     </header>
+
     <main>
       <router-view />
     </main>
+
     <footer>
-      <p>{{ $t('footer') }}  <a href="mailto:saidelhabhab@gmail.com">saidelhabhab@gmail.com</a></p>
+      <p>{{ $t('footer') }} <a href="mailto:saidelhabhab@gmail.com">saidelhabhab@gmail.com</a></p>
     </footer>
   </div>
 </template>
+
 
 <script>
 import { ref } from 'vue';
@@ -94,23 +104,40 @@ export default {
 
 header {
   background-color: #42b983;
-  padding: 1rem;
+  padding: 1rem 2rem;
 }
 
 nav {
   display: flex;
-  gap: 1rem;
   align-items: center;
+  gap: 1rem;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  margin-right: 2rem;
+}
+
+.logo {
+  height: 40px;
 }
 
 nav a {
   color: white;
   text-decoration: none;
   font-weight: bold;
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: #2e8f66;
 }
 
 nav a.router-link-active {
-  text-decoration: underline;
+  background-color: #2e8f66;
 }
 
 nav button {
@@ -121,6 +148,7 @@ nav button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 nav button:hover {
@@ -134,9 +162,8 @@ nav button:hover {
   gap: 0.5rem;
 }
 
-/* Styled Select Dropdown */
 .styled-select {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 8px;
   border: 1px solid #ccc;
   background-color: #fff;
@@ -148,14 +175,10 @@ nav button:hover {
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.styled-select:hover {
-  border-color: #42b983;
-  box-shadow: 0 0 10px rgba(66, 185, 131, 0.5);
-}
-
+.styled-select:hover,
 .styled-select:focus {
   border-color: #42b983;
-  box-shadow: 0 0 10px rgba(66, 185, 131, 0.8);
+  box-shadow: 0 0 10px rgba(66, 185, 131, 0.5);
 }
 
 .flag-icon {
@@ -175,12 +198,23 @@ footer {
   padding: 1rem;
 }
 
-/* RTL support */
-[dir="rtl"] {
-  text-align: right;
+footer p a {
+  color: #42b983;
+  text-decoration: none;
 }
 
+footer p a:hover {
+  text-decoration: underline;
+}
+
+/* RTL support */
 [dir="rtl"] nav {
   flex-direction: row-reverse;
 }
+
+[dir="rtl"] .logo-link {
+  margin-left: 2rem;
+  margin-right: 0;
+}
+
 </style>

@@ -31,8 +31,8 @@ class ClientController extends Controller
             'email'   => 'required|email|unique:clients,email',
             'phone'   => 'nullable|string|max:20',
             'address' => 'nullable|string',
-            'final_price'   => 'required|numeric|min:0',
-            'remaining_price' => 'required|numeric|min:0',
+            'final_price'   => 'nullable|numeric|min:0',
+            'remaining_price' => 'nullable|numeric|min:0',
         ]);
 
         // Create the client

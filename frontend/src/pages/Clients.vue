@@ -32,8 +32,8 @@
           <th><i class="bi bi-person-fill me-2"></i> {{ $t('clients.cin') }}</th>
           <th><i class="bi bi-person-fill me-2"></i> {{ $t('clients.name') }}</th>
           <th><i class="bi bi-envelope-fill me-2"></i> {{ $t('clients.email') }}</th>
-          <th><i class="bi bi-telephone-fill me-2"></i> {{ $t('clients.phone') }}</th>
-          <th><i class="bi bi-geo-alt-fill me-2"></i> {{ $t('clients.address') }}</th>
+          <th><i class="bi bi-telephone-fill me-2"></i> {{ $t('clients.final_price') }}</th>
+          <th><i class="bi bi-geo-alt-fill me-2"></i> {{ $t('clients.remaining_price') }}</th>
           <th><i class="bi bi-tools me-2"></i> {{ $t('clients.actions') }}</th>
         </tr>
       </thead>
@@ -42,17 +42,17 @@
           <td>{{ client.cin }}</td>
           <td>{{ client.name }}</td>
           <td>{{ client.email }}</td>
-          <td>{{ client.phone }}</td>
-          <td>{{ client.address }}</td>
+          <td> <strong>{{ client.final_price }}</strong></td>
+          <td> <strong>{{ client.remaining_price }}</strong></td>
           <td>
-            <button class="btn btn-sm btn-primary me-2" @click="viewClient(client)">
-                <i class="bi bi-eye-fill me-1"></i> {{ $t('clients.show') }}
+            <button class="btn btn-sm btn-primary me-1 m-1" @click="viewClient(client)">
+                <i class="bi bi-eye-fill me-1"></i> 
             </button>
-            <button class="btn btn-sm btn-warning me-2" @click="editClient(client)">
-              <i class="bi bi-pencil-fill me-1"></i> {{ $t('clients.edit') }}
+            <button class="btn btn-sm btn-warning me-1 m-1" @click="editClient(client)">
+              <i class="bi bi-pencil-fill me-1"></i> 
             </button>
-            <button class="btn btn-sm btn-danger me-2" @click="deleteClient(client.id)">
-              <i class="bi bi-trash-fill me-1"></i> {{ $t('clients.delete') }}
+            <button class="btn btn-sm btn-danger me-1 m-1" @click="deleteClient(client.id)">
+              <i class="bi bi-trash-fill me-1"></i> 
             </button>
           </td>
         </tr>

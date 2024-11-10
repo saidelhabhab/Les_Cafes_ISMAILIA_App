@@ -22,8 +22,8 @@ class AnalyticsController extends Controller
 
         // Fetch sales data grouped by week
         $salesData = DB::table('invoices')
-            ->select(DB::raw('WEEK(created_at, 1) as week_number'), DB::raw('SUM(total) as total_sales'))
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select(DB::raw('WEEK(due_date, 1) as week_number'), DB::raw('SUM(total) as total_sales'))
+            ->whereBetween('due_date', [$startDate, $endDate])
             ->groupBy('week_number')
             ->orderBy('week_number')
             ->get();
@@ -53,8 +53,8 @@ class AnalyticsController extends Controller
 
         // Fetch sales data grouped by month
         $salesData = DB::table('invoices')
-            ->select(DB::raw('MONTH(created_at) as month_number'), DB::raw('SUM(total) as total_sales'))
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select(DB::raw('MONTH(due_date) as month_number'), DB::raw('SUM(total) as total_sales'))
+            ->whereBetween('due_date', [$startDate, $endDate])
             ->groupBy('month_number')
             ->orderBy('month_number')
             ->get();

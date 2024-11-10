@@ -1,13 +1,13 @@
 <template>
   <div class="container new-invoice">
-    <h1 class="text-center mb-4">Edit Invoice</h1>
+    <h1 class="text-center mb-4">{{ $t('invoices.editInvoice')}}</h1>
 
     <!-- Edit Invoice Form -->
     <form @submit.prevent="handleSubmit" class="p-4 border rounded shadow">
       <div class="mb-3">
         <label for="client_id" class="form-label">Client:</label>
         <select v-model="form.client_id" class="form-select" id="client_id" required>
-          <option disabled value="">Select a client</option>
+          <option disabled value="">{{ $t('invoices.selectClient')}}</option>
           <option v-for="client in clients" :key="client.id" :value="client.id">
             {{ client.name }}
           </option>
@@ -15,45 +15,45 @@
       </div>
 
       <div class="mb-3">
-        <label for="status" class="form-label">Status:</label>
+        <label for="status" class="form-label">{{  $t('invoices.status') }}</label>
         <select v-model="form.status" class="form-select" id="status" required>
-          <option disabled value="">Select status</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
+          <option disabled value="">{{  $t('invoices.selectStatus') }}</option>
+          <option value="paid">{{  $t('invoices.paid') }}</option>
+          <option value="pending">{{  $t('invoices.pending') }}</option>
           <option value="canceled">Canceled</option>
         </select>
       </div>
 
       <div class="mb-3">
-        <label for="due_date" class="form-label">Due Date:</label>
+        <label for="due_date" class="form-label">{{  $t('invoices.dueDate') }}</label>
         <input type="date" v-model="form.due_date" class="form-control" id="due_date" required />
       </div>
 
       <div class="mb-3">
-        <label for="payment_type" class="form-label">Payment Type:</label>
+        <label for="payment_type" class="form-label">{{  $t('invoices.paymentType') }}</label>
         <select v-model="form.payment_type" class="form-select" id="payment_type" required>
-          <option disabled value="">Select payment type</option>
-          <option value="check">Check</option>
-          <option value="cash">Cash</option>
+          <option disabled value="">{{  $t('invoices.selectPaymentType') }}</option>
+          <option value="cash">{{  $t('invoices.cash') }}</option>
+          <option value="check">{{  $t('invoices.check') }}</option>
         </select>
       </div>
 
       <!-- Conditionally render the date input for "Check" payment method -->
       <div v-if="form.payment_type === 'check'">
-        <label for="checkDate">Date of Cashing a Check:</label>
+        <label for="checkDate">{{  $t('invoices.checkDate') }}</label>
         <input type="date" v-model="form.checkDate" style="max-width: 30%" class="form-control" id="checkDate" required />
       </div>
 
-      <h5 class="mt-4">Invoice Items</h5>
+      <h5 class="mt-4">{{  $t('invoices.invoiceItems') }}</h5>
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Product</th>
-            <th>Price ($)</th>
-            <th>Quantity</th>
-            <th>Unit</th>
-            <th>Total ($)</th>
-            <th>Actions</th>
+            <th>{{  $t('invoices.product') }}</th>
+            <th>{{  $t('invoices.price') }}</th>
+            <th>{{  $t('invoices.quantity') }}</th>
+            <th>{{  $t('invoices.unit') }}</th>
+            <th>{{  $t('invoices.total') }}</th>
+            <th>{{  $t('invoices.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -61,7 +61,7 @@
             
             <td>
               <select v-model="item.product_id" class="form-select" @change="updatePrice(item)" required>
-                <option disabled value="">Select a product</option>
+                <option disabled value="">{{  $t('invoices.selectProduct') }}</option>
                 <option 
                   v-for="product in availableProducts(index)" 
                   :key="product.id" 
@@ -82,39 +82,34 @@
             </td>
             <td>{{ calculateItemTotal(item) }}</td>
             <td>
-              <button type="button" class="btn btn-sm btn-danger" @click="removeInvoiceItem(index)">Remove</button>
+              <button type="button" class="btn btn-sm btn-danger" @click="removeInvoiceItem(index)">{{  $t('invoices.remove') }}</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <button type="button" class="btn btn-secondary" @click="addInvoiceItem">Add Item</button>
+      <button type="button" class="btn btn-secondary" @click="addInvoiceItem">{{  $t('invoices.addItem') }}</button>
 
       <div class="mb-3">
-        <label for="amount" class="form-label">Amount ($):</label>
+        <label for="amount" class="form-label">{{  $t('invoices.amount') }}</label>
         <input type="number" :value="amount" class="form-control" id="amount" readonly />
       </div>
 
       <div class="mb-3">
-        <label for="tva" class="form-label">TVA (%):</label>
+        <label for="tva" class="form-label">{{  $t('invoices.tva') }}</label>
         <input type="number" v-model.number="form.tva" class="form-control" id="tva" min="0" step="0.01" required />
       </div>
 
       <div class="mb-3">
-        <label for="total-amount" class="form-label">Total Amount ($):</label>
+        <label for="total-amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
         <input type="number" :value="totalAmountWithTva" class="form-control" id="total-amount" readonly />
       </div>
 
-      <div class="mb-3">
-        <label for="final_price" class="form-label">Final Price ($):</label>
-        <input type="number" v-model.number="form.final_price" class="form-control" id="final_price" min="0" step="0.01" required />
-      </div>
+      <div>
 
-      <div class="mb-3">
-        <label for="remaining_price" class="form-label">Remaining Price ($):</label>
-        <input type="number" v-model.number="form.remaining_price" class="form-control" id="remaining_price" min="0" step="0.01" required />
-      </div>
+</div>
 
-      <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+
+      <button type="submit" class="btn btn-success mt-3">{{  $t('invoices.updateInvoice') }}</button>
 
       <p v-if="errorMessage" class="text-danger mt-3">{{ errorMessage }}</p>
     </form>
@@ -128,6 +123,8 @@
   import { useRoute, useRouter } from 'vue-router';
 
    export default {
+  methods: {
+  },
     name: 'EditInvoice',
     setup() {
       const clients = ref([]);
@@ -141,13 +138,12 @@
         amount: 0,
         status: '',
         due_date: '',
-        final_price: 0,
-        remaining_price: 0,
         payment_type: '',
         tva: 0,
-        invoice_items: [
-          
-        ],
+        invoice_items: [],
+        amount_in_words_en: '', // New field for English
+        amount_in_words_fr: '', // New field for French
+        amount_in_words_ar: '', // New field for Arabic
       });
       const errorMessage = ref('');
 
@@ -236,6 +232,108 @@
         return (totalAmount + tvaAmount).toFixed(2);
       });
 
+       // Utility functions to convert numbers to words
+       const numberToWordsEN = (num) => {
+          const words = [
+              '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+              'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen',
+              'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'
+          ];
+          if (num < 20) return words[num];
+          if (num < 100) return words[20 + Math.floor(num / 10) - 2] + (num % 10 !== 0 ? '-' + words[num % 10] : '');
+          if (num < 1000) return words[Math.floor(num / 100)] + ' hundred' + (num % 100 !== 0 ? ' and ' + numberToWordsEN(num % 100) : '');
+          if (num < 1000000) return numberToWordsEN(Math.floor(num / 1000)) + ' thousand' + (num % 1000 !== 0 ? ' ' + numberToWordsEN(num % 1000) : '');
+          if (num < 1000000000) return numberToWordsEN(Math.floor(num / 1000000)) + ' million' + (num % 1000000 !== 0 ? ' ' + numberToWordsEN(num % 1000000) : '');
+          return 'Number too large';
+      };
+
+      const numberToWordsFR = (num) => {
+          const words = [
+              '', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
+              'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf',
+              'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'
+          ];
+          if (num < 20) return words[num];
+          if (num < 100) return words[20 + Math.floor(num / 10) - 2] + (num % 10 !== 0 ? (num < 80 ? '-' : ' ') + words[num % 10] : '');
+          if (num < 1000) return words[Math.floor(num / 100)] + ' cent' + (num % 100 !== 0 ? ' ' + numberToWordsFR(num % 100) : '');
+          if (num < 1000000) return numberToWordsFR(Math.floor(num / 1000)) + ' mille' + (num % 1000 !== 0 ? ' ' + numberToWordsFR(num % 1000) : '');
+          if (num < 1000000000) return numberToWordsFR(Math.floor(num / 1000000)) + ' million' + (num % 1000000 !== 0 ? ' ' + numberToWordsFR(num % 1000000) : '');
+          return 'Nombre trop grand';
+      };
+
+      const numberToWordsAR = (num) => {
+          const units = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+          const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+          const tens = ['', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+          if (num < 10) return units[num];
+          if (num < 20) return teens[num - 10];
+          if (num < 100) {
+              const tenPart = Math.floor(num / 10);
+              const unitPart = num % 10;
+              return (unitPart !== 0 ? units[unitPart] + ' و ' : '') + (tenPart > 0 ? tens[tenPart - 1] : '');
+          }
+          if (num < 1000) {
+              const hundredPart = Math.floor(num / 100);
+              const remainder = num % 100;
+              const hundredText = hundredPart === 2 ? 'مائتان' : (hundredPart > 1 ? units[hundredPart] + ' مئة' : 'مئة');
+              return hundredText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          if (num < 1000000) {
+              const thousandPart = Math.floor(num / 1000);
+              const remainder = num % 1000;
+              const thousandText = thousandPart === 1 ? 'ألف' : (thousandPart === 2 ? 'ألفان' : numberToWordsAR(thousandPart) + ' آلاف');
+              return thousandText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          if (num < 1000000000) {
+              const millionPart = Math.floor(num / 1000000);
+              const remainder = num % 1000000;
+              const millionText = millionPart === 1 ? 'مليون' : (millionPart === 2 ? 'مليونان' : numberToWordsAR(millionPart) + ' ملايين');
+              return millionText + (remainder !== 0 ? ' و ' + numberToWordsAR(remainder) : '');
+          }
+          return 'رقم كبير جداً';
+      };
+
+      // Function to convert decimal numbers to words with tenths and hundredths
+      const numberToWordsWithDecimalsEN = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsEN(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "tenth" : "hundredth";
+              const decimalWords = numberToWordsEN(decimalNumber);
+              return `${words} and ${decimalWords} ${unit}${decimalNumber > 1 ? 's' : ''}`;
+          }
+          return words;
+      };
+
+      const numberToWordsWithDecimalsFR = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsFR(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "dixième" : "centième";
+              const decimalWords = numberToWordsFR(decimalNumber);
+              return `${words} et ${decimalWords} ${unit}${decimalNumber > 1 ? 's' : ''}`;
+          }
+          return words;
+      };
+
+      const numberToWordsWithDecimalsAR = (num) => {
+          const [integerPart, decimalPart] = num.toString().split('.');
+          const words = numberToWordsAR(parseInt(integerPart));
+          if (decimalPart) {
+              const decimalNumber = parseInt(decimalPart);
+              const unit = decimalPart.length === 1 ? "عُشر" : "جزء من المائة";
+              const decimalWords = numberToWordsAR(decimalNumber);
+              return `${words} و ${decimalWords} ${unit}`;
+          }
+          return words;
+      };
+      
+      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(totalAmountWithTva.value));
+      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(totalAmountWithTva.value));
+      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(totalAmountWithTva.value));
+
       const handleSubmit = async () => {
         // Calculate totals for all invoice items
         form.value.invoice_items.forEach(item => {
@@ -247,6 +345,11 @@
 
           // Set the total amount with TVA
          form.value.total_amount_with_tva = totalAmountWithTva.value; // Set this value before sending
+
+         // Set the computed values in the form
+        form.value.amount_in_words_en = amountInWordsEN.value;
+        form.value.amount_in_words_fr = amountInWordsFR.value;
+        form.value.amount_in_words_ar = amountInWordsAR.value;
         try {
           
          // console.log("Form Data:", JSON.stringify(form.value));
@@ -281,7 +384,10 @@
         amount,
         totalAmountWithTva,
         handleSubmit,
-        availableProducts
+        availableProducts,
+        amountInWordsEN,
+        amountInWordsFR,
+        amountInWordsAR,
       };
     },
    };

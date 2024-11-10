@@ -7,6 +7,8 @@ use App\Models\Purchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+
 
 class PurchaseController extends Controller
 {
@@ -103,5 +105,16 @@ class PurchaseController extends Controller
         $purchase->delete();
 
         return response()->json(null, 204);
+    }
+
+
+    public function getYears()
+    {
+        $years = Purchase::select(DB::raw('YEAR(due_date) as year'))
+            ->distinct()
+            ->orderBy('year', 'asc')
+            ->pluck('year');
+    
+        return response()->json($years);
     }
 }

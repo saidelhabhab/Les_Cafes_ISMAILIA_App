@@ -20,10 +20,14 @@ class Invoice extends Model
         'checkDate',
         'factor_code',         // Added field
         'factor_bar_code',     // Added field
-        'final_price',         // Added field
+       // 'final_price',         // Added field
         'remaining_price',      // Added field
         'payment_type',        // Added field
         'tva',                 // Added field
+        'amount_tva',
+        'amount_in_words_en',
+        'amount_in_words_fr',
+        'amount_in_words_ar',
     ];
 
 

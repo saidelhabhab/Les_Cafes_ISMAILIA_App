@@ -1,6 +1,56 @@
 <template>
   <div class="container returns-container">
-    <h2 class="my-4 text-center"><i class="fas fa-undo"></i> {{ $t('returns.title') }}</h2>
+    <h2 class="my-4 text-center" style="color: brown;"><i class="fas fa-undo"></i> {{ $t('returns.title') }}</h2>
+
+
+    <!-- Search Section -->
+    <section class="search-section my-4">
+      <h4>{{ $t('returns.search') }}</h4>
+      <div class="form-row align-items-end mb-3">
+        <!-- Search by Product Name -->
+        <div class="form-group col-md-3">
+          <input
+            type="text"
+            v-model="searchProduct"
+            class="form-control"
+            :placeholder="$t('returns.searchProduct')"
+          />
+        </div>
+
+        <!-- Search by Start Date -->
+        <div class="form-group col-md-3">
+          <label for="">
+            <h5>{{ $t('returns.startDate') }}</h5>
+            <input
+              type="date"
+              v-model="searchStartDate"
+              class="form-control"
+              :placeholder="$t('returns.startDate')"
+            /> 
+          </label>
+        </div>
+
+        <!-- Search by End Date -->
+        <div class="form-group col-md-3">
+          <label for="">
+            <h5>{{ $t('returns.endDate') }}</h5>
+            <input
+              type="date"
+              v-model="searchEndDate"
+              class="form-control"
+              :placeholder="$t('returns.endDate')"
+            />
+          </label>
+        </div>
+
+        <!-- Clear Button -->
+        <div class="form-group col-md-3">
+          <button class="btn btn-secondary btnClear" @click="clearSearch">{{ $t('returns.removeReturnItem') }}</button>
+        </div>
+      </div>
+    </section>
+
+
 
     <!-- Existing Returns -->
     <section class="return-list mb-5">
@@ -8,33 +58,20 @@
       <table class="table table-bordered table-hover">
         <thead class="thead-dark bg-dark text-white">
           <tr>
-            <th>
-              <i class="fas fa-receipt"></i> {{ $t('returns.returnId') }}
-            </th>
-            <th>
-              <i class="fas fa-file-invoice"></i> {{ $t('returns.invoiceId') }}
-            </th>
-            <th>
-              <i class="fas fa-box-open"></i> {{ $t('returns.product') }}
-            </th>
-            <th>
-              <i class="fas fa-sort-numeric-up-alt"></i> {{ $t('returns.quantity') }}
-            </th>
-            <th>
-              <i class="fas fa-calendar-alt"></i> {{ $t('returns.date') }}
-            </th>
-            <th>
-              <i class="fas fa-cogs"></i> {{ $t('returns.actions') }}
-            </th>
+            <th><i class="fas fa-receipt"></i> {{ $t('returns.returnId') }}</th>
+            <th><i class="fas fa-file-invoice"></i> {{ $t('returns.invoiceId') }}</th>
+            <th><i class="fas fa-box-open"></i> {{ $t('returns.product') }}</th>
+            <th><i class="fas fa-sort-numeric-up-alt"></i> {{ $t('returns.quantity') }}</th>
+            <th><i class="fas fa-calendar-alt"></i> {{ $t('returns.date') }}</th>
+            <th><i class="fas fa-cogs"></i> {{ $t('returns.actions') }}</th>
           </tr>
         </thead>
-
         <tbody>
-          <tr v-for="returnItem in returns" :key="returnItem.id">
+          <tr v-for="returnItem in paginatedReturns" :key="returnItem.id">
             <td>{{ returnItem.id }}</td>
-            <td>{{ returnItem.invoice_id }}</td>
-            <td>{{ returnItem.product_id }}</td>
-            <td>{{ returnItem.quantity }}</td>
+            <td>{{ getProductBarcodeById(returnItem.product_id) }}</td>
+            <td>{{ getProductNameById(returnItem.product_id) }}</td>
+            <td>{{ returnItem.quantity }} {{ returnItem.unit }}</td>
             <td>{{ formatDate(returnItem.created_at) }}</td>
             <td>
               <button class="btn btn-info btn-sm" @click="viewReturn(returnItem.id)">
@@ -44,14 +81,34 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Pagination -->
+      <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <a class="page-link" @click="changePage(currentPage - 1)" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: page === currentPage }">
+            <a class="page-link" @click="changePage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <a class="page-link" @click="changePage(currentPage + 1)" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </section>
 
+
     <!-- Create Return Form -->
-    <section class="create-return">
-      <h3><i class="fas fa-plus-circle"></i> {{ $t('returns.createReturn') }}</h3>
+    <section class="create-return mb-5">
+      <h3 style="color: #225203"><i class="fas fa-plus-circle"></i> {{ $t('returns.createReturn') }}</h3>
       <form @submit.prevent="handleCreateReturn">
         <div class="form-group">
-          <label for="invoice">{{ $t('returns.selectInvoice') }}:</label>
+          <label for="invoice">{{ $t('returns.selectInvoice') }}</label>
           <select
             id="invoice"
             v-model="selectedInvoice"
@@ -67,7 +124,7 @@
         </div>
 
         <!-- List products in returnItems -->
-        <div class="form-group product-item border rounded p-3 m-3" v-for="(item, index) in returnItems" :key="index">
+        <div v-if="selectedInvoice" class="form-group product-item border rounded p-3 m-3" v-for="(item, index) in returnItems" :key="index">
           <label>{{ $t('returns.product') }}:</label>
           <select
             v-model="item.product_id"
@@ -116,8 +173,8 @@
         </div>
 
         <!-- Display Total Price (with TVA) -->
-        <div class="form-group">
-          <h4>{{ $t('returns.totalPriceWithTVA') }}: {{ totalPriceWithTVA.toFixed(2) }} {{ $t('returns.dh') }}</h4>
+        <div class="form-group mt-5">
+          <h4>{{ $t('returns.totalPriceWithTVA') }} <strong style="color:brown">{{ totalPriceWithTVA.toFixed(2) }} {{ $t('returns.dh') }} </strong> </h4>
         </div>
 
         <!-- Conditionally Render Submit Return Button -->
@@ -142,7 +199,7 @@
 
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted ,computed} from 'vue';
 import axios from '../services/axios'; // Ensure this path is correct
 import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router';
@@ -165,6 +222,12 @@ export default {
     const removedItems = ref([]); // To track removed invoice item IDs
     const showSubmitReturn = ref(false);
     const products = ref([]); // Store all products here
+    const searchProduct = ref('');
+    const searchStartDate = ref(null);
+    const searchEndDate = ref(null);
+    const currentPage = ref(1);
+    const itemsPerPage = ref(10); // Adjust items per page as needed
+
 
     // Fetch existing returns
     const fetchReturns = async () => {
@@ -208,6 +271,12 @@ export default {
       return product ? product.name : `Product ${productId}`;
     };
 
+    // Get product barcode by ID from products list
+    const getProductBarcodeById = (productId) => {
+      const product = products.value.find((p) => p.id === productId);
+      return product ? product.barcode : `Barcode not available`;
+    };
+
     // Fetch products associated with the selected invoice
     const fetchInvoiceProducts = async () => {
       if (selectedInvoice.value) {
@@ -241,6 +310,7 @@ export default {
               invoice_item_id: item.id, // Ensure 'id' is the correct invoice_item_id
               invoice_id: invoice.id, // Add the invoice ID here
               price: parseFloat(item.price),
+              unit: item.unit
 
             }));
 
@@ -251,17 +321,58 @@ export default {
         }
       } else {
         selectedProducts.value = [];
-        returnItems.value = [{ product_id: '', quantity: 1, invoice_item_id: null, invoice_id: null }]; // Ensure invoice_id is also included here
+        returnItems.value = [{ product_id: '', quantity: 1, invoice_item_id: null, invoice_id: null ,unit:''}]; // Ensure invoice_id is also included here
         totalPriceWithTVA.value = 0;
         tvaRate.value = 0;
       }
     };
+
+
+     // Computed property for filtered returns
+    const filteredReturns = computed(() => {
+      return returns.value.filter((returnItem) => {
+        const productName = getProductNameById(returnItem.product_id).toLowerCase();
+        const searchProductValue = searchProduct.value.toLowerCase();
+
+        const matchesProduct = productName.includes(searchProductValue);
+
+        const itemDate = new Date(returnItem.created_at);
+        const startDate = searchStartDate.value ? new Date(searchStartDate.value) : null;
+        const endDate = searchEndDate.value ? new Date(searchEndDate.value) : null;
+
+        const withinDateRange =
+          (!startDate || itemDate >= startDate) &&
+          (!endDate || itemDate <= endDate);
+
+        return matchesProduct && withinDateRange;
+      });
+    });
+
+    // Computed property for total pages
+    const totalPages = computed(() => {
+      return Math.ceil(filteredReturns.value.length / itemsPerPage.value);
+    });
+
+    // Computed property for paginated returns
+    const paginatedReturns = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      return filteredReturns.value.slice(start, start + itemsPerPage.value);
+    });
+
+    const changePage = (page) => {
+      if (page < 1 || page > totalPages.value) return;
+      currentPage.value = page;
+    };
+
+
 
     onMounted(() => {
       fetchReturns();
       fetchInvoices();
       fetchProducts();
     });
+
+  
 
      // Method to handle returning products to stock
     const returnToStock = async (invoice_id, product_id, return_quantity, invoice_item_id, original_quantity,price) => {
@@ -278,6 +389,13 @@ export default {
           Swal.fire('Notice', 'You are returning the full quantity. Please use the "Remove" button instead.', 'info');
           return;
         }
+
+         // Check if the return quantity exceeds the available stock quantity
+        if (return_quantity > original_quantity) {
+          Swal.fire('Notice', 'Return quantity exceeds the available quantity in stock.', 'info');
+          return;
+        }
+
 
         // Send request to the API to return product to stock along with invoice item data
         const response = await axios.post('/return-quantity', {
@@ -303,7 +421,7 @@ export default {
       }
     };
 
-    // Remove a return item and update totalPriceWithTVA
+    // Inside the removeReturnItem method
     const removeReturnItem = async (index) => {
       const result = await Swal.fire({
         title: 'Are you sure?',
@@ -319,26 +437,34 @@ export default {
         const product = selectedProducts.value.find(p => p.id === removedItem.product_id);
 
         if (product) {
-          totalPriceWithTVA.value -= removedItem.quantity * product.price;
-        }
+          // Calculate the item total price based on quantity in kg
+          const itemTotalPrice = removedItem.price * removedItem.quantity; // Adjusted to reflect the original calculation
+          // Deduct item total price from totalPriceWithTVA
+          totalPriceWithTVA.value -= itemTotalPrice;
 
-        if (removedItem.invoice_item_id) {
-          removedItems.value.push({
-            invoice_item_id: removedItem.invoice_item_id, 
-            product_id: removedItem.product_id, 
-            quantity: removedItem.quantity,
-            price : removedItem.price,
-            unit : removedItem.unit
-          });
-        } else {
-          console.error('Removed item does not have an invoice_item_id:', removedItem);
-        }
+          // Deduct TVA if applicable
+          const tvaAmount = tvaRate.value > 0 ? itemTotalPrice * tvaRate.value : 0;
+          totalPriceWithTVA.value -= tvaAmount; // Deduct TVA
+
+          // Add removed item details to removedItems
+          if (removedItem.invoice_item_id) {
+            removedItems.value.push({
+              invoice_item_id: removedItem.invoice_item_id, 
+              product_id: removedItem.product_id, 
+              quantity: removedItem.quantity,
+              price: removedItem.price,
+              unit: removedItem.unit
+            });
+          } else {
+            console.error('Removed item does not have an invoice_item_id:', removedItem);
+          }
 
           // Update showSubmitReturn based on remaining return items
           showSubmitReturn.value = returnItems.value.length > 0;
 
-        returnItems.value.splice(index, 1);
-        Swal.fire('Removed!', 'The item has been removed.', 'success');
+          returnItems.value.splice(index, 1);
+          Swal.fire('Removed!', 'The item has been removed.', 'success');
+        }
       }
     };
 
@@ -366,6 +492,7 @@ export default {
 
     // Handle the creation of a return
     const handleCreateReturn = async () => {
+
       successMessage.value = '';
       errorMessage.value = '';
 
@@ -427,12 +554,10 @@ export default {
 
           }
         }
-          
-          
-
+        
         // Clear form and messages
         selectedInvoice.value = '';
-        returnItems.value = [{ product_id: '', quantity: 1, invoice_item_id: null,price:'' }];
+        returnItems.value = [{ product_id: '', quantity: 1, invoice_item_id: null,price:'',unit:'' }];
         successMessage.value = `Return created successfully!`;
         fetchReturns(); // Refresh the returns list
       } catch (error) {
@@ -454,9 +579,19 @@ export default {
       return new Date(dateString).toLocaleDateString('fr-FR');
     };
 
+
+
+    const clearSearch = () => {
+      searchProduct.value = '';
+      searchStartDate.value = null;
+      searchEndDate.value = null;
+    };
+
+
     return {
       returns,
       invoices,
+      clearSearch,
       selectedInvoice,
       returnItems,
       selectedProducts,
@@ -465,6 +600,7 @@ export default {
       totalPriceWithTVA,
       handleCreateReturn,
       getProductNameById,
+      getProductBarcodeById,
       fetchInvoiceProducts,
       removeReturnItem,
       getMaxQuantity,
@@ -473,7 +609,18 @@ export default {
       returnToStock, // Add the new method here
       showSubmitReturn, // Expose the variable for template usage
       formatDate,
-      viewReturn
+      viewReturn,
+      searchProduct,
+      searchStartDate,
+      searchEndDate,
+      filteredReturns,
+      filteredReturns,
+      paginatedReturns,
+      currentPage,
+      totalPages,
+      itemsPerPage,
+      changePage,
+      clearSearch,
     };
   },
 };
@@ -537,4 +684,33 @@ thead th {
 thead th i {
   margin-right: 8px;
 }
+
+.search-section {
+  background-color: #f8f9fa; /* Light background */
+  padding: 20px; /* Padding around the section */
+  border-radius: 5px; /* Rounded corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.473); /* Subtle shadow */
+}
+
+.search-section h4 {
+  margin-bottom: 15px; /* Space below the heading */
+}
+
+.search-section .form-row {
+  display: flex; /* Use flexbox for alignment */
+  align-items: flex-end; /* Align items to the bottom */
+  margin-bottom: 15px; /* Space between the form row and button */
+}
+
+.search-section .form-group {
+  margin-right: 10px; /* Space between form groups */
+}
+
+.search-section .btn {
+  width: 50%; /* Full-width button */
+  background-color: rgb(87, 3, 21);
+}
+
+
+
 </style>

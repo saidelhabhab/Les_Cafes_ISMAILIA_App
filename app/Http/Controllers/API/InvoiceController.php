@@ -44,8 +44,11 @@ class InvoiceController extends Controller
             'checkDate' => 'nullable|date',
             'payment_type' => 'required|string|in:cash,check',
             'tva' => 'nullable|numeric|min:0',
-            'final_price' => 'required|numeric|min:0',
-            'remaining_price' => 'required|numeric|min:0',
+           // 'final_price' => 'nullable|numeric|min:0',
+            'remaining_price' => 'nullable|numeric|min:0',
+            'amount_in_words_en'=> 'required|string',
+            'amount_in_words_fr'=> 'required|string',
+            'amount_in_words_ar'=> 'required|string',
             'invoice_items' => 'required|array|min:1',
             'invoice_items.*.product_id' => 'required|integer|exists:products,id',
             'invoice_items.*.quantity' => 'required|numeric|min:1', // Allow numeric for conversion
@@ -91,6 +94,12 @@ class InvoiceController extends Controller
             Log::error($e->getTraceAsString());
             return response()->json(['error' => 'Failed to generate barcode. Please try again.'], 500);
         }
+
+
+        $amount_tva = 0;
+        if($validatedData['tva']> 0) {
+           $amount_tva =  $validatedData['tva'] *  ( $validatedData['amount'] / 100);
+        }
         
         // Start a transaction
         DB::beginTransaction();
@@ -100,6 +109,7 @@ class InvoiceController extends Controller
                 'client_id' => $validatedData['client_id'],
                 'amount' => $validatedData['amount'],
                 'total_amount_with_tva' => $validatedData['total_amount_with_tva'],
+                'amount_tva' => $amount_tva,
                 'status' => $validatedData['status'],
                 'due_date' => $validatedData['due_date'],
                 'checkDate' => $validatedData['payment_type'] === 'check' ? $validatedData['checkDate'] : null,
@@ -107,13 +117,15 @@ class InvoiceController extends Controller
                 'factor_bar_code' => $factor_bar_code_path,
                 'payment_type' => $validatedData['payment_type'],
                 'tva' => $validatedData['tva'] ?? 0,
-                'final_price' => $validatedData['final_price'],
                 'remaining_price' => $validatedData['remaining_price'],
+                'amount_in_words_en' => $validatedData['amount_in_words_en'],
+                'amount_in_words_fr' => $validatedData['amount_in_words_fr'],
+                'amount_in_words_ar' => $validatedData['amount_in_words_ar'],
             ]);
 
             // Update client financials
             $client = Client::findOrFail($validatedData['client_id']);
-            $client->final_price += $validatedData['final_price'];
+            $client->final_price += $validatedData['total_amount_with_tva'];
             $client->remaining_price += $validatedData['remaining_price'];
             $client->save();
 
@@ -221,10 +233,12 @@ class InvoiceController extends Controller
                  'total_amount_with_tva' => 'required|numeric',
                  'status' => 'required|string',
                  'due_date' => 'required|date',
-                 'final_price' => 'required|numeric|min:0',
-                 'remaining_price' => 'required|numeric|min:0',
+                 'remaining_price' => 'nullable|numeric|min:0',
                  'checkDate' => 'nullable|date',
                  'payment_type' => 'required|string|in:cash,check',
+                 'amount_in_words_en'=> 'required|string',
+                 'amount_in_words_fr'=> 'required|string',
+                 'amount_in_words_ar'=> 'required|string',
                  'tva' => 'nullable|numeric|min:0',
                  'invoice_items' => 'required|array',
                  'invoice_items.*.product_id' => 'required|exists:products,id',
@@ -271,12 +285,20 @@ class InvoiceController extends Controller
                     }
                 }
 
+
+            // Step 4: Calculate amount_tva
+            $tva = $validatedData['tva'] ?? 0; // Get TVA or default to 0
+            $amount = $validatedData['amount']; // Get amount
+            $amount_tva = $amount * ($tva / 100); // Calculate amount_tva
+
+
      
-             // Step 4: Update the invoice properties
+             // Step 5: Update the invoice properties
              $invoice->fill($validatedData);
+             $invoice->amount_tva = $amount_tva; // Store amount_tva in the invoice
              $invoice->save();
      
-             // Step 5: Add new invoice items
+             // Step 6: Add new invoice items
              foreach ($request->invoice_items as $newItem) {
                  $item = new InvoiceItem();
                  $item->invoice_id = $invoice->id;
@@ -287,7 +309,7 @@ class InvoiceController extends Controller
                  $item->total = $newItem['total'];
                  $item->save();
      
-                 // Step 6: Update product stock based on new invoice items
+                 // Step 7: Update product stock based on new invoice items
                  $product = Product::find($newItem['product_id']);
                  if ($product) {
                      // Convert quantity to kilograms (if needed)
@@ -299,7 +321,7 @@ class InvoiceController extends Controller
                  }
              }
      
-             // Step 7: Return a response
+             // Step 8: Return a response
              return response()->json(['message' => 'Invoice updated successfully!', 'invoice' => $invoice], 200);
          } catch (\Exception $e) {
              // Log the error
@@ -309,12 +331,6 @@ class InvoiceController extends Controller
      }
      
 
-     
-     
-     
-    
-
-    
 
     /**
      * Remove the specified invoice from storage.
@@ -369,8 +385,8 @@ class InvoiceController extends Controller
         ]);
 
         // Get total invoice amounts grouped by month for the specified year
-        $monthlyData = Invoice::select(DB::raw('SUM(total_amount_with_tva) as total_amount'), DB::raw('MONTH(created_at) as month'))
-            ->whereYear('created_at', $year) // Specify year from request
+        $monthlyData = Invoice::select(DB::raw('SUM(total_amount_with_tva) as total_amount'), DB::raw('MONTH(due_date) as month'))
+            ->whereYear('due_date', $year) // Specify year from request
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('total_amount', 'month')
@@ -383,7 +399,7 @@ class InvoiceController extends Controller
         }
 
         // Calculate total amount for the selected year
-        $totalAmount = Invoice::whereYear('created_at', $year)
+        $totalAmount = Invoice::whereYear('due_date', $year)
             ->sum('total_amount_with_tva'); // Adjust field name if necessary
 
         // Return both monthly data and total amount
@@ -396,7 +412,7 @@ class InvoiceController extends Controller
 
     public function getYears()
     {
-        $years = Invoice::select(DB::raw('YEAR(created_at) as year'))
+        $years = Invoice::select(DB::raw('YEAR(due_date) as year'))
             ->distinct()
             ->orderBy('year', 'asc')
             ->pluck('year');
@@ -414,93 +430,14 @@ class InvoiceController extends Controller
           return response()->json(['total_revenue' => $totalRevenue]);
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        $invoice->status = $request->input('status');
+        $invoice->save();
 
+        return response()->json(['message' => 'Status updated successfully.']);
+    }
 
-       /* public function update(Request $request, $id)
-     {
-         // Start transaction to ensure data integrity
-         DB::beginTransaction();
-     
-         try {
-             // Find the invoice
-             $invoice = Invoice::findOrFail($id);
-     
-             // Step 1: Restore stock quantities for each old item and delete them
-             foreach ($invoice->invoice_items as $oldItem) {
-                 $product = Product::find($oldItem->product_id);
-                 
-                 if ($product) {
-                     // Convert quantity to kilograms (if needed)
-                     $quantityInKg = $this->convertToKg($oldItem->quantity, $oldItem->unit);
-                     
-                     // Increase product quantity in stock
-                     $product->quantity += $quantityInKg;
-                     $product->save();
-                 }
-     
-                 // Explicitly delete each item
-                 $oldItem->delete();
-             }
-     
-             // Step 2: Update the invoice fields
-             $invoice->update([
-                 'client_id' => $request->input('client_id'),
-                 'amount' => $request->input('amount'),
-                 'total_amount_with_tva' => $request->input('total_amount_with_tva'),
-                 'status' => $request->input('status'),
-                 'due_date' => $request->input('due_date'),
-                 'checkDate' => $request->input('checkDate'),
-                 'factor_code' => $request->input('factor_code'),
-                 'factor_bar_code' => $request->input('factor_bar_code'),
-                 'final_price' => $request->input('final_price'),
-                 'remaining_price' => $request->input('remaining_price'),
-                 'payment_type' => $request->input('payment_type'),
-                 'tva' => $request->input('tva'),
-             ]);
-     
-             // Step 3: Add new invoice items and deduct quantities from stock
-             foreach ($request->input('invoice_items') as $itemData) {
-                 $product = Product::findOrFail($itemData['product_id']);
-                 $quantityInKg = $this->convertToKg($itemData['quantity'], $itemData['unit']);
-     
-                 if ($product->quantity < $quantityInKg) {
-                     throw new \Exception("Not enough stock for product ID: {$itemData['product_id']}");
-                 }
-     
-                 // Create new invoice item
-                 $invoiceItem = new InvoiceItem([
-                     'invoice_id' => $invoice->id,
-                     'product_id' => $itemData['product_id'],
-                     'quantity' => $itemData['quantity'],
-                     'unit' => $itemData['unit'],
-                     'price' => $itemData['price'],
-                     'total' => $itemData['total'],
-                 ]);
-                 $invoiceItem->save();
-     
-                 // Deduct stock quantity from product
-                 $product->quantity -= $quantityInKg;
-                 $product->save();
-             }
-     
-             // Commit transaction
-             DB::commit();
-             
-             return response()->json(['message' => 'Invoice updated successfully', 'invoice' => $invoice], 200);
-     
-         } catch (\Exception $e) {
-             // Rollback transaction if there is an error
-             DB::rollBack();
-             
-             // Log error for debugging
-             Log::error('Error updating invoice: ' . $e->getMessage());
-             Log::error('Stack Trace: ' . $e->getTraceAsString());
-             
-             return response()->json(['error' => 'Failed to update invoice. Please try again.'], 500);
-         }
-     }
-     
-
-     */
      
 }

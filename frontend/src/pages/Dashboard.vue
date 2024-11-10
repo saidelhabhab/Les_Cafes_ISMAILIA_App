@@ -53,7 +53,7 @@
             <td>{{ invoice.id }}</td>
             <td>{{ invoice.client.name }}</td>
             <td>${{ invoice.total_amount_with_tva }}</td>
-            <td>{{ formatDate(invoice.created_at) }}</td>
+            <td>{{ formatDate(invoice.dueDate) }}</td>
           </tr>
         </tbody>
       </table>
@@ -76,38 +76,26 @@ export default {
     const totalRevenue = ref(0);
     const recentInvoices = ref([]);
 
-    const fetchTotalRevenue = async () => {
+    const fetchMetrics = async () => {
       try {
-        const response = await axios.get('/total-revenue'); // API endpoint for total revenue
-       // console.log("Total Revenue Response:", response.data);
-        totalRevenue.value = response.data.total_revenue; // Set the total revenue
-       // console.log("totalRevenue.value", totalRevenue.value);
+        const [productsRes, clientsRes, invoicesRes, recentInvoicesRes, totalRevenueRes] = await Promise.all([
+          axios.get('/products'),
+          axios.get('/clients'),
+          axios.get('/invoices'),
+          axios.get('/invoices?limit=5&sort=desc'),
+          axios.get('/total-revenue') // Fetch total revenue directly
+        ]);
+
+        totalProducts.value = productsRes.data.items.length;
+        totalClients.value = clientsRes.data.length;
+        totalInvoices.value = invoicesRes.data.length;
+        totalRevenue.value = totalRevenueRes.data.total_revenue; // Set totalRevenue from API response
+        recentInvoices.value = recentInvoicesRes.data.slice(0, 5);
       } catch (error) {
-        console.error('Error fetching total revenue:', error);
+        console.error("Error fetching metrics:", error);
       }
     };
 
-    const fetchMetrics = async () => {
-    try {
-      const [productsRes, clientsRes, invoicesRes, recentInvoicesRes] = await Promise.all([
-        axios.get('/products'),
-        axios.get('/clients'),
-        axios.get('/invoices'),
-        axios.get('/invoices?limit=5&sort=desc'),
-      ]);
-
-     // console.log("productsRes ==> ", productsRes); // Log the full response for debugging
-
-      totalProducts.value = productsRes.data.items.length;
-    //  console.log("product ==> ", productsRes.data.length);
-      totalClients.value = clientsRes.data.length;
-      totalInvoices.value = invoicesRes.data.length;
-      totalRevenue.value = invoicesRes.data.reduce((acc, invoice) => acc + invoice.total_amount_with_tva, 0);
-      recentInvoices.value = recentInvoicesRes.data.slice(0, 5);
-    } catch (error) {
-      console.error("Error fetching metrics:", error);
-    }
-  };
 
 
     const formatDate = (dateStr) => {
@@ -126,6 +114,7 @@ export default {
       totalRevenue,
       recentInvoices,
       formatDate,
+      
     };
   },
 };

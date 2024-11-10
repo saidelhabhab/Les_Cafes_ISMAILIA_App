@@ -8,6 +8,21 @@
     <router-link to="/invoices/new" class="btn btn-primary mb-3">
       <i class="bi bi-plus-circle me-2"></i> {{ $t('invoices.addNewInvoice') }}
     </router-link>
+    
+     <!-- Search by Client -->
+     <div class="mb-3 search-container">
+      <label for="clientSearch" class="form-label">
+        <i class="bi bi-search me-2"></i> {{ $t('invoices.searchClientPlaceholder') }}
+      </label>
+      <input
+        id="clientSearch"
+        type="text"
+        v-model="searchQuery" 
+        class="form-control"
+        :placeholder="$t('invoices.searchClientPlaceholder')"
+        style="width: 30%;"
+      />
+    </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center my-3">
@@ -22,7 +37,6 @@
       <i class="bi bi-folder-x me-2"></i> {{ $t('invoices.noInvoicesFound') }}
     </div>
 
-    <!-- Invoices Table -->
     <div v-else>
       <table class="table table-bordered table-hover">
         <thead class="table-light">
@@ -30,18 +44,23 @@
             <th><i class="bi bi-hash me-2"></i> {{ $t('invoices.id') }}</th>
             <th><i class="bi bi-person-fill me-2"></i> {{ $t('invoices.client') }}</th>
             <th><i class="bi bi-currency-dollar me-2"></i> {{ $t('invoices.total') }}</th>
-            <th><i class="bi bi-card-checklist me-2"></i> {{ $t('invoices.status') }}</th>
             <th><i class="bi bi-calendar-event me-2"></i> {{ $t('invoices.dueDate') }}</th>
+            <th><i class="bi bi-card-checklist me-2"></i> {{ $t('invoices.status') }}</th>
             <th><i class="bi bi-tools me-2"></i> {{ $t('invoices.actions') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="invoice in invoices" :key="invoice.id">
+          <tr v-for="invoice in paginatedInvoices" :key="invoice.id">
             <td>{{ invoice.factor_code }}</td>
-            <td>{{ invoice.client?.name || 'N/A' }}</td>
-            <td>${{ parseFloat(invoice.total_amount_with_tva).toFixed(2) }}</td>
-            <td>{{ capitalizeFirstLetter(invoice.status) }}</td>
+            <td style="color:maroon;"> <strong>{{ invoice.client?.name || 'N/A' }}</strong></td>
+            <td><strong> {{ parseFloat(invoice.total_amount_with_tva).toFixed(2) }} {{ $t('returns.dh') }} </strong></td>
             <td>{{ new Date(invoice.due_date).toLocaleDateString() }}</td>
+            <td style="color:green"> 
+              <strong>
+              {{ $t(`invoices.${invoice.status}`) }}
+              <i class="bi bi-pencil-fill" @click="openModal(invoice)" style="cursor: pointer;"></i>
+              </strong>
+            </td>
             <td>
               <router-link :to="`/invoices/${invoice.id}`" class="btn btn-info btn-sm me-2">
                 <i class="bi bi-eye-fill"></i> {{ $t('invoices.view') }}
@@ -56,92 +75,295 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-controls">
+        <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1">{{ $t('purchasesShow.previous') }}</button>
+        <span class="pagination-info">{{ currentPage }} / {{ totalPages }}</span>
+        <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages">{{ $t('purchasesShow.next') }}</button>
+      </div>
+
     </div>
+
+    
   </div>
 </template>
 
 
 <script>
-import { ref, onMounted } from 'vue';
-import axios from '../services/axios';
-import Swal from 'sweetalert2';
+  import { ref, onMounted, computed } from 'vue'; // Add 'computed' to the import
+  import axios from '../services/axios';
+  import Swal from 'sweetalert2';
 
-export default {
-  name: 'InvoiceList',
-  setup() {
-    const invoices = ref([]);
-    const loading = ref(true);
+  export default {
+    name: 'InvoiceList',
+    setup() {
+      const invoices = ref([]);
+      const loading = ref(true);
+      const isModalOpen = ref(false);
+      const selectedInvoice = ref(null);
+      const selectedStatus = ref('Paid');
+      const searchQuery = ref(''); // New reactive variable for search input
+      // Pagination properties
+    const currentPage = ref(1);
+    const itemsPerPage = ref(10); // Adjust as needed
 
-    const fetchInvoices = async () => {
-      loading.value = true;
-      try {
-        const response = await axios.get('/invoices');
-        invoices.value = response.data;
-      } catch (error) {
-        Swal.fire('Error', 'Failed to fetch invoices.', 'error');
-      } finally {
-        loading.value = false;
-      }
-    };
+      const fetchInvoices = async () => {
+        loading.value = true;
+        try {
+          const response = await axios.get('/invoices');
+          invoices.value = response.data;
+        } catch (error) {
+          Swal.fire('Error', 'Failed to fetch invoices.', 'error');
+        } finally {
+          loading.value = false;
+        }
+      };
 
-    const removeInvoice = async (invoiceId) => {
-      const confirmed = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'This action cannot be undone.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
+      const removeInvoice = async (invoiceId) => {
+        const confirmed = await Swal.fire({
+          title: 'Are you sure?',
+          text: 'This action cannot be undone.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+          cancelButtonText: 'No, cancel!',
+        });
+
+        if (confirmed.isConfirmed) {
+          try {
+            await axios.delete(`/invoices/${invoiceId}`);
+            Swal.fire('Deleted!', 'Invoice has been deleted.', 'success');
+            fetchInvoices(); // Refresh the invoice list
+          } catch (error) {
+            Swal.fire('Error', 'Failed to delete invoice.', 'error');
+          }
+        }
+      };
+
+      const openModal = (invoice) => {
+        selectedInvoice.value = invoice;
+        selectedStatus.value = invoice.status;
+        isModalOpen.value = true;
+      };
+
+      const closeModal = () => {
+        isModalOpen.value = false;
+        selectedInvoice.value = null;
+      };
+
+      const updateStatus = async () => {
+        try {
+          await axios.put(`/invoices/changeStatus/${selectedInvoice.value.id}`, {
+            status: selectedStatus.value,
+          });
+          Swal.fire('Success', 'Status changed successfully!', 'success');
+          await fetchInvoices();
+          closeModal();
+        } catch (error) {
+          console.error('Error updating status:', error);
+        }
+      };
+
+      const capitalizeFirstLetter = (string) => string.charAt(0).toUpperCase() + string.slice(1);
+
+       // Computed property to filter invoices based on searchQuery and paginate results
+      const filteredInvoices = computed(() => {
+        let filtered = invoices.value;
+        if (searchQuery.value) {
+          filtered = filtered.filter(invoice =>
+            invoice.client?.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+          );
+        }
+        return filtered;
       });
 
-      if (confirmed.isConfirmed) {
-        try {
-          await axios.delete(`/invoices/${invoiceId}`);
-          Swal.fire('Deleted!', 'Invoice has been deleted.', 'success');
-          fetchInvoices(); // Refresh the invoice list
-        } catch (error) {
-          Swal.fire('Error', 'Failed to delete invoice.', 'error');
-        }
-      }
+      const paginatedInvoices = computed(() => {
+        const start = (currentPage.value - 1) * itemsPerPage.value;
+        const end = start + itemsPerPage.value;
+        return filteredInvoices.value.slice(start, end);
+      });
+
+      // Total pages for pagination
+    const totalPages = computed(() => {
+      return Math.ceil(filteredInvoices.value.length / itemsPerPage.value);
+    });
+
+    const prevPage = () => {
+      if (currentPage.value > 1) currentPage.value--;
     };
 
-    const capitalizeFirstLetter = (string) => string.charAt(0).toUpperCase() + string.slice(1);
-
-    // Fetch invoices when the component is mounted
-    onMounted(fetchInvoices);
-
-    return {
-      invoices,
-      loading,
-      removeInvoice,
-      capitalizeFirstLetter,
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) currentPage.value++;
     };
-  },
-};
+
+      onMounted(fetchInvoices);
+
+      return {
+        invoices,
+        loading,
+        removeInvoice,
+        capitalizeFirstLetter,
+        isModalOpen,
+        selectedInvoice,
+        selectedStatus,
+        closeModal,
+        openModal,
+        updateStatus,
+        searchQuery,      // New search query binding
+        filteredInvoices, // Computed property for filtered invoices
+        paginatedInvoices,
+      currentPage,
+      totalPages,
+      prevPage,
+      nextPage,
+      };
+    },
+  };
+
 </script>
 
 <style scoped>
-.container {
-  padding: 2rem;
+  .container {
+    padding: 2rem;
+  }
+
+  h1 {
+    color: #007bff; /* Bootstrap primary color */
+  }
+
+  .table th {
+    background-color: #f8f9fa; /* Light background for table header */
+  }
+
+  .table tbody tr:hover {
+    background-color: #f1f1f1; /* Row hover effect */
+  }
+
+  .btn-sm {
+    margin-right: 5px;
+  }
+
+  .spinner-border {
+    margin: auto;
+  }
+
+
+  .modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px; /* Adjust width as needed */
+    text-align: center; /* Center text inside modal */
+    animation: fadeIn 0.3s; /* Animation for modal appearance */
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+    text-decoration: none;
+  }
+
+  .modal-title {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+  }
+
+  .modal-icon {
+    font-size: 24px; /* Adjust icon size */
+    margin-right: 8px; /* Space between icon and title */
+    color: #007bff; /* Icon color */
+  }
+
+  .status-select {
+    width: 100%; /* Full width */
+    padding: 10px;
+    margin: 20px 0; /* Margin above and below the select */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .save-button {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .save-button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+  }
+
+  /* Animation for modal appearance */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+
+  .pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
 }
 
-h1 {
-  color: #007bff; /* Bootstrap primary color */
+.pagination-button {
+  background-color: #007bff; /* Primary color */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
 }
 
-.table th {
-  background-color: #f8f9fa; /* Light background for table header */
+.pagination-button:hover {
+  background-color: #0056b3; /* Darker primary color on hover */
 }
 
-.table tbody tr:hover {
-  background-color: #f1f1f1; /* Row hover effect */
+.pagination-button:disabled {
+  background-color: #d3d3d3; /* Disabled button color */
+  cursor: not-allowed;
 }
 
-.btn-sm {
-  margin-right: 5px;
+.pagination-info {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
 }
 
-.spinner-border {
-  margin: auto;
-}
+
 </style>

@@ -5,6 +5,7 @@ import { ref } from 'vue';
 import router from '../router';
 
 export const useAuthStore = defineStore('auth', () => {
+
   const user = ref(null);
   const token = ref(localStorage.getItem('token') || '');
 
@@ -24,7 +25,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
   
-
 
   const logout = async () => {
     try {
