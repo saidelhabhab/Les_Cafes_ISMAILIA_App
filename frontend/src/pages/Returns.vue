@@ -226,7 +226,7 @@ export default {
     const searchStartDate = ref(null);
     const searchEndDate = ref(null);
     const currentPage = ref(1);
-    const itemsPerPage = ref(10); // Adjust items per page as needed
+    const itemsPerPage = ref(6); // Adjust items per page as needed
 
 
     // Fetch existing returns
@@ -498,7 +498,7 @@ export default {
 
       try {
         // Step 1: Check removedItems for valid data
-        console.log("Removed Items Debug:", JSON.stringify(removedItems.value, null, 2));
+      //  console.log("Removed Items Debug:", JSON.stringify(removedItems.value, null, 2));
 
         // Validate if removedItems have product_id and invoice_item_id
         const validRemovedItems = removedItems.value.filter(item => {
@@ -507,7 +507,7 @@ export default {
         });
 
         // Log validRemovedItems
-        console.log("Valid Removed Items:", JSON.stringify(validRemovedItems, null, 2));
+      // console.log("Valid Removed Items:", JSON.stringify(validRemovedItems, null, 2));
 
         // Step 2: Ensure there are valid items to process
         if (validRemovedItems.length === 0) {
@@ -529,7 +529,7 @@ export default {
           deleted_invoice_item_ids: validRemovedItems.map(item => item.invoice_item_id),  // Using invoice_item_id here
         };
 
-       console.log("Payload to be sent:", JSON.stringify(payload));
+      // console.log("Payload to be sent:", JSON.stringify(payload));
 
         // Step 4: Make the API request to create a return
         const createResponse = await axios.post('/returns', payload);
@@ -538,7 +538,7 @@ export default {
         Swal.fire('Success', `Created successfully!`, 'success');
 
         // Step 5: Remove old invoice items (if any)
-       if (payload.deleted_invoice_item_ids.length > 0) {
+      /* if (payload.deleted_invoice_item_ids.length > 0) {
           const deleteResponse = await axios.delete('/invoice-items', {
             data: {
               invoice_id: selectedInvoice.value,
@@ -554,6 +554,7 @@ export default {
 
           }
         }
+        */
         
         // Clear form and messages
         selectedInvoice.value = '';

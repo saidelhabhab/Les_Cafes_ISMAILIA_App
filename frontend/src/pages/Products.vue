@@ -417,7 +417,7 @@ export default {
       showEditModal.value = false;
       showViewModal.value = false; // Close the view modal
       selectedProduct.value = null; // Reset selected product
-      form.value = { id: null, name: '', description: '', buy_price: 0, price: 0, quantity: 0, categoryId: null, subcategoryId: null };
+      form.value = { id: null, name: '',  price: 0, quantity: 0};
       errorMessage.value = '';
       showAddQuantityModal.value = false;
     };

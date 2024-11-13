@@ -16,26 +16,27 @@
         <div v-for="pageIndex in totalPages" :key="pageIndex" class="invoice-page">
           <!-- Logo at the Center -->
           <br>
-          <div class="text-center mb-4">
-            <img src="@/assets/image.png" alt="Logo" class="mb-3" width="200" />
+          <div class="text-center "style="margin-top: -40px;" >
+            <img src="@/assets/icon2.png" alt="Logo" class="mb-3" width="200" />
           </div>
 
           <!-- Client Information on the Right -->
-          <div class="d-flex justify-content-end">
-            <div class="client-info-container">
-              <h5 class="client-title">{{ $t('invoices.billTo') }}</h5>
-              <div class="client-info-card card p-3">
-                <div class="client-info-details">
-                  <div class="info-item">{{ invoice.client.name }}</div>
-                  <div class="info-item">{{ invoice.client.address }}</div>
-                  <div class="info-item">{{ invoice.client.phone }}</div>
-                  <div class="info-item">{{ invoice.client.email }}</div>
+            <div class="d-flex justify-content-end" style="margin-top: -33px;" >
+              <div class="client-info-container d-flex align-items-start" >
+                <h5 class="client-title me-3">{{ $t('dashboard.client') }} :</h5>
+                <div class="client-info-card card p-3" style="width: 300px; ">
+                  <div class="client-info-details">
+                    <div class="info-item">{{ invoice.client.name }}</div>
+                    <div class="info-item">{{ invoice.client.address }}</div>
+                    <div class="info-item">{{ invoice.client.phone }}</div>
+                    <div class="info-item">{{ invoice.client.email }}</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="d-flex justify-content-between align-items-start table_bar">
+
+          <div class="d-flex justify-content-between align-items-start table_bar" style="margin-top: -40px; ">
             <div class="text-center">
               <h1>{{ $t('invoices.title2') }}</h1>
             </div>
@@ -46,15 +47,15 @@
             <table class="table factor">
               <tbody>
                 <tr>
-                  <th><strong>{{ $t('invoices.reference') }}</strong></th>
+                  <th><strong>{{ $t('invoices.title2') }} Nº</strong></th>
                   <th><strong>{{ $t('invoices.date') }}</strong></th>
                   <th><strong>{{ $t('invoices.representative') }}</strong></th>
                   <th><strong>{{ $t('invoices.page') }}</strong></th>
                 </tr>
                 <tr>
                   <td>
-                    <img :src="`http://localhost:8002/storage/${invoice.factor_bar_code}`" alt="Barcode" width="150" />
-                    <div>{{ invoice.factor_code }}</div>
+                    <small class="text-muted"><img :src="`http://localhost:8002/storage/${invoice.factor_bar_code}`" alt="Barcode" width="150" />
+                    <div>{{ invoice.factor_code }}</div> </small> 
                   </td>
                   <td>
                     <p>{{ formatDate(today) }}</p>
@@ -67,28 +68,40 @@
           </div>
 
           <!-- Invoice Items Table -->
-          <div class="invoice-items">
-            <table class="table table-striped">
+          <div class="invoice-items" style="margin-top: -10px;">
+            <table class="table tt">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>{{ $t('products.title') }}</th>
-                  <th>{{ $t('products.quantity') }}</th>
-                  <th>{{ $t('products.price') }}  ({{ $t('returns.dh') }}) </th>
-                  <th>{{ $t('products.total') }}  ({{ $t('returns.dh') }})</th>
+                  <th>{{ $t('invoices.reference') }}</th>
+                  <th>{{ $t('products.designation') }}</th>
+                  <th>{{ $t('products.quantity1') }}</th>
+                  <th>{{ $t('products.price1') }} </th>
+                  <th>{{ $t('products.total1') }} </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in getItemsForPage(pageIndex)" :key="index">
-                  <td>{{ (pageIndex - 1) * itemsPerPage + index + 1 }}</td>
-                  <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
-                  <td>{{ parseFloat(item.quantity) }} {{ item.unit }}</td>
-                  <td>{{ parseFloat(item.price).toFixed(2) }} </td>
-                  <td>{{ (parseFloat(item.total).toFixed(2)) }} </td>
-                </tr>
-              </tbody>
+                  <!-- Render actual rows -->
+                  <tr
+                    v-for="(item, index) in getItemsForPage(pageIndex)"
+                    :key="index"
+                    :style="{
+                      backgroundColor: 'transparent',
+                      height: getItemsForPage(pageIndex).length < 3 ? '250px' : (index === getItemsForPage(pageIndex).length - 1 ? '200px' : 'auto'),
+                    }"
+                  >
+                    <td>{{ getProductReference(item.product_id) || 'N/A' }}</td>
+                    <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
+                    <td>{{ parseFloat(item.quantity) }} {{ item.unit }}</td>
+                    <td>{{ parseFloat(item.price).toFixed(2) }}</td>
+                    <td>{{ parseFloat(item.total).toFixed(2) }}</td>
+                  </tr>
+                </tbody>
+
+
+
             </table>
           </div>
+
 
           <!-- Total Section -->
         <div class="row total-amount">
@@ -155,30 +168,35 @@
 
   .invoice-page {
       position: relative;
-      border-top: 20px solid maroon;  /* Add top border */
-      border-bottom: 20px solid maroon; /* Add bottom border */
+      border-top: 20px solid #683c11;  /* Add top border */
+      border-bottom: 20px solid #683c11; /* Add bottom border */
       margin: 0 40px 0 40px;
-      background: url("@/assets/img.png") center center no-repeat; /* Center the image */
-      background-size: 500px auto; /* Adjust size; change if needed */
+      background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.9); /* Adds overlay */
+      background-blend-mode: lighten; /* Adjust as needed (e.g., overlay, darken) */
+      background-size: 600px auto;
+
   }
+
 
 
   
   /* Existing styles for th, td, tr */
   th, td, tr {
-      border: 1px solid maroon;
+      border: 1px solid #000000;
   }
 
   th {
-      background-color: rgba(95, 189, 192, 0.479);
+      background-color: rgba(255, 255, 255, 0);
   }
 
   td{
-    background-color: rgba(255, 255, 255, 0.26);
+    background-color: rgba(255, 255, 255, 0);
   }
 
+ 
+
   .factor{
-    width: 60%;
+    width: 70%;
   }
 
   .invoice-page {
@@ -195,7 +213,7 @@
   .address {
       margin-top: 60px; /* Keep the top margin for spacing above */
       font-size: 12px; /* Font size */
-      color: maroon; /* Text color */
+      color: #683c11; /* Text color */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font family */
       font-weight: bold; /* Font weight */
       margin-bottom: 0; /* No margin below the address */
@@ -225,8 +243,8 @@
     /* General settings for A4 sizing */
     .invoice-page {
         position: relative;
-        border-top: 20px solid maroon;
-        border-bottom: 20px solid maroon;
+        border-top: 20px solid #683c11;
+        border-bottom: 20px solid #683c11;
         margin: 0;
         padding: 0;
         page-break-after: always;
@@ -236,9 +254,9 @@
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
-        background: center center no-repeat !important;
-        background-size: 500px auto !important;
-        background-image: url("@/assets/img.png") !important;
+        background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.9) !important; /* Adds overlay */
+        background-blend-mode: lighten !important; /* Adjust as needed (e.g., overlay, darken) */
+        background-size: 600px auto !important;
 
         visibility: visible;
         /* Center and scale the image nicely */
@@ -255,15 +273,15 @@
 
     /* Existing styles for th, td, tr */
     th, td, tr {
-        border: 1px solid maroon;
+      border: 1px solid #000000;
     }
 
     th {
-      background-color: rgba(95, 189, 192, 0.479) !important;
+        background-color: rgba(255, 255, 255, 0);
     }
 
     td{
-      background-color: rgba(255, 255, 255, 0.26) !important;
+      background-color: rgba(255, 255, 255, 0);
     }
   
 
@@ -283,6 +301,7 @@
         position: absolute;
         top: 0;
         left: 0;
+        padding: 0%;
     }
 
     /* Page margins */
@@ -311,7 +330,7 @@
 
     .address {
         font-size: 12px;
-        color: maroon;
+        color: #683c11;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-weight: bold;
         line-height: 1.1;
@@ -370,6 +389,7 @@ export default {
     const today = new Date(); 
 
     const itemsPerPage = 3; // Define itemsPerPage as a constant
+    
     const totalPages = computed(() => {
       if (!invoice.value || !invoice.value.invoice_items) return 1;
       return Math.ceil(invoice.value.invoice_items.length / itemsPerPage);
@@ -409,6 +429,12 @@ export default {
       if (!Array.isArray(products.value)) return 'Unknown Product'; 
       const product = products.value.find((p) => p.id === Number(productId));
       return product ? product.name : 'Unknown Product';
+    };
+
+    const getProductReference = (productId) => {
+      if (!Array.isArray(products.value)) return 'Unknown Product'; 
+      const product = products.value.find((p) => p.id === Number(productId));
+      return product ? product.reference : 'Unknown Product';
     };
 
     const getItemsForPage = (pageIndex) => {
@@ -460,6 +486,8 @@ export default {
       });
     };
 
+  
+
 
     onMounted(() => {
       fetchInvoiceData();
@@ -477,8 +505,10 @@ export default {
       downloadPDF,
       getProductName,
       getItemsForPage,
+      getProductReference,
       totalPages,
       itemsPerPage, // Make sure itemsPerPage is included here
+      
     };
   },
 

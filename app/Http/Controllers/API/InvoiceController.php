@@ -175,28 +175,28 @@ class InvoiceController extends Controller
     }
     
 
-        /**
-         * Convert the quantity to kilograms based on the unit
-         *
-         * @param float $quantity
-         * @param string $unit
-         * @return float
-         */
+    /**
+     * Convert the quantity to kilograms based on the unit
+     *
+     * @param float $quantity
+     * @param string $unit
+     * @return float
+     */
 
 
-         private function convertToKg($quantity, $unit)
-         {
-             switch ($unit) {
-                 case 'ton':
-                     return $quantity * 1000; // 1 ton = 1000 kg
-                 case 'kg':
-                     return $quantity; // already in kg
-                 case 'g':
-                     return $quantity / 1000; // convert grams to kg
-                 default:
-                     return 0; // handle unknown units
-             }
-         }
+        private function convertToKg($quantity, $unit)
+        {
+            switch ($unit) {
+                case 'ton':
+                    return $quantity * 1000; // 1 ton = 1000 kg
+                case 'kg':
+                    return $quantity; // already in kg
+                case 'g':
+                    return $quantity / 1000; // convert grams to kg
+                default:
+                    return 0; // handle unknown units
+            }
+        }
 
     /**
      * Display the specified invoice.
@@ -248,7 +248,26 @@ class InvoiceController extends Controller
      
              // Step 2: Find the invoice
              $invoice = Invoice::findOrFail($id);
+
+             // Step 3: Retrieve the old total amount with tva
+             $oldTotalAmountWithTva = $invoice->total_amount_with_tva;
      
+             // Step 4: Update client financials
+             $client = Client::findOrFail($validatedData['client_id']);
+             
+             // Decrease old amount from client's final price
+             $client->final_price -= $oldTotalAmountWithTva;
+             
+             // Increase by new amount with tva
+             $client->final_price += $validatedData['total_amount_with_tva'];
+     
+             // Update remaining price if necessary
+             $client->remaining_price += $validatedData['remaining_price'];
+     
+             // Save updated client
+             $client->save();
+
+    
             // Step 3: Restore stock quantities for each old item and delete them
                 foreach ($invoice->invoice_items as $oldItem) {
                     // Log the old item information for debugging

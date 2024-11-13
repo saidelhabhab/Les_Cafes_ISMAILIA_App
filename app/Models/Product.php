@@ -20,6 +20,7 @@ class Product extends Model
         'quantity',
         'barcode',
         'unit',  // Added unit field
+        'reference' // Added reference field
     ];
 
     public function returns()

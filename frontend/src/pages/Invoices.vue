@@ -83,6 +83,22 @@
         <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages">{{ $t('purchasesShow.next') }}</button>
       </div>
 
+       <!-- Modal -->
+       <div v-if="isModalOpen" class="modal">
+        <div class="modal-content">
+          <span @click="closeModal" class="close">&times;</span>
+          <h2 class="modal-title">
+            <i class="bi bi-pencil-fill modal-icon"></i>
+            {{ $t('invoices.edit') }}
+          </h2>
+          <select v-model="selectedStatus" class="status-select">
+            <option value="paid">{{ $t('invoices.paid') }}</option>
+            <option value="pending">{{ $t('invoices.pending') }}</option>
+          </select>
+          <button @click="updateStatus" class="save-button">{{ $t('invoices.saveInvoice') }}</button>
+        </div>
+      </div>
+
     </div>
 
     
@@ -213,10 +229,10 @@
         searchQuery,      // New search query binding
         filteredInvoices, // Computed property for filtered invoices
         paginatedInvoices,
-      currentPage,
-      totalPages,
-      prevPage,
-      nextPage,
+        currentPage,
+        totalPages,
+        prevPage,
+        nextPage,
       };
     },
   };

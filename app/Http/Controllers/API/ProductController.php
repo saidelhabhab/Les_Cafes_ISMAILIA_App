@@ -66,6 +66,9 @@ class ProductController extends Controller
             return response()->json(['error' => 'Failed to generate barcode. Please try again.'], 500);
         }
 
+        // Generate two random uppercase words for the reference
+        $reference = strtoupper(Str::random(2, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'));
+
         // Store product in the database, with quantity in kg and unit set to 'kg'
         $product = Product::create([
             'name' => $request->name,
@@ -73,6 +76,7 @@ class ProductController extends Controller
             'quantity' => $quantityInKg,
             'barcode' => $barcode,
             'unit' => 'kg', // Always store as 'kg'
+            'reference' => $reference // Add two random uppercase words as reference
         ]);
 
         return response()->json($product, 201);

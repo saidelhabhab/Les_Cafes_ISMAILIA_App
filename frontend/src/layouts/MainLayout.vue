@@ -4,18 +4,18 @@
       <nav>
         <!-- Logo -->
         <router-link to="/" class="logo-link">
-          <img src="@/assets/image.png" alt="Logo" class="logo" />
+          <img src="@/assets/icon2.png" alt="Logo" class="logo" />
         </router-link>
 
         <!-- Navigation Links -->
-        <router-link to="/">{{ $t('dashboardNav') }}</router-link>
-        <router-link to="/purchases">{{ $t('purchasesNav') }}</router-link>
-        <router-link to="/products">{{ $t('productsNav') }}</router-link>
-        <router-link to="/clients">{{ $t('clientsNav') }}</router-link>
-        <router-link to="/invoices">{{ $t('invoicesNav') }}</router-link>
-        <router-link to="/returns">{{ $t('returnsNav') }}</router-link>
-        <router-link to="/analytics">{{ $t('analyticsNav') }}</router-link>
-        <router-link to="/profile">{{ $t('profileNav') }}</router-link>
+        <router-link
+          v-for="(link, index) in navLinks"
+          :key="index"
+          :to="link.path"
+          :class="{ 'is-active': isActive(link.path) }"
+        >
+          {{ $t(link.name) }}
+        </router-link>
 
         <!-- Logout Button -->
         <button @click="logout">{{ $t('logout') }}</button>
@@ -37,16 +37,15 @@
     </main>
 
     <footer>
-      <p>{{ $t('footer') }} <a href="mailto:saidelhabhab@gmail.com">saidelhabhab@gmail.com</a></p>
+      <p>© {{ year }} {{ $t('footer') }} <a href="mailto:saidelhabhab@gmail.com">saidelhabhab@gmail.com</a></p>
     </footer>
   </div>
 </template>
 
-
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useAuthStore } from '../store/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import usFlag from '@/assets/flags/us.png';
@@ -58,9 +57,22 @@ export default {
   setup() {
     const authStore = useAuthStore();
     const router = useRouter();
+    const route = useRoute();
     const { locale } = useI18n();
 
     const currentLanguage = ref(locale.value);
+    const year = ref(new Date().getFullYear());
+
+    const navLinks = [
+      { path: '/', name: 'dashboardNav' },
+      { path: '/purchases', name: 'purchasesNav' },
+      { path: '/products', name: 'productsNav' },
+      { path: '/clients', name: 'clientsNav' },
+      { path: '/invoices', name: 'invoicesNav' },
+      { path: '/returns', name: 'returnsNav' },
+      { path: '/analytics', name: 'analyticsNav' },
+      { path: '/profile', name: 'profileNav' },
+    ];
 
     const logout = () => {
       authStore.logout();
@@ -85,11 +97,16 @@ export default {
       }
     };
 
+    const isActive = (path) => route.path === path;
+
     return {
       logout,
       currentLanguage,
       changeLanguage,
       getFlag,
+      year,
+      navLinks,
+      isActive,
     };
   },
 };
@@ -103,8 +120,9 @@ export default {
 }
 
 header {
-  background-color: #42b983;
-  padding: 1rem 2rem;
+  background-color: #c7c7c77e;
+
+ 
 }
 
 nav {
@@ -120,11 +138,12 @@ nav {
 }
 
 .logo {
-  height: 40px;
+  height: 70px;
+  width: 100px;
 }
 
 nav a {
-  color: white;
+  color: rgb(2, 2, 2);
   text-decoration: none;
   font-weight: bold;
   padding: 0.5rem 0.75rem;
@@ -133,11 +152,13 @@ nav a {
 }
 
 nav a:hover {
-  background-color: #2e8f66;
+  background-color: #701a1a;
+  color:#eeebeb;
 }
 
-nav a.router-link-active {
-  background-color: #2e8f66;
+.is-active {
+  background-color: #ffae42;
+  color: rgb(102, 10, 10);
 }
 
 nav button {
@@ -199,8 +220,9 @@ footer {
 }
 
 footer p a {
-  color: #42b983;
+  color: #701a1a;
   text-decoration: none;
+  font-weight: bold;
 }
 
 footer p a:hover {
@@ -216,5 +238,4 @@ footer p a:hover {
   margin-left: 2rem;
   margin-right: 0;
 }
-
 </style>
