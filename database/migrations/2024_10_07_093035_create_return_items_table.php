@@ -12,8 +12,8 @@ class CreateReturnItemsTable extends Migration
             $table->id();
             $table->foreignId('invoice_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->decimal('quantity', 10, 4);
-            $table->enum('unit', ['ton', 'kg', 'g']);
+            $table->integer('quantity');
+         //   $table->enum('unit', ['ton', 'kg', 'g']);
             $table->timestamps();
         });
     }

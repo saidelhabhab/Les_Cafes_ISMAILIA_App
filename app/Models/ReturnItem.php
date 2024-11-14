@@ -10,7 +10,12 @@ class ReturnItem extends Model
     use HasFactory;
 
     
-    protected $fillable = ['invoice_id', 'product_id', 'quantity','unit'];
+    protected $fillable = [
+        'invoice_id',
+        'product_id', 
+        'quantity',
+       // 'unit'
+    ];
 
     public function invoice()
     {

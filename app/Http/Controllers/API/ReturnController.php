@@ -36,7 +36,6 @@ class ReturnController extends Controller
             'items.*.quantity' => 'required|numeric',
             'total_amount_with_tva' => 'required|numeric',
             'items.*.price' => 'required|numeric',
-            'items.*.unit' => 'required|string|in:ton,kg,g',
             'deleted_invoice_item_ids.*' => 'exists:invoice_items,id', // Optional, for removed items
         ]);
 
@@ -51,20 +50,17 @@ class ReturnController extends Controller
 
             foreach ($request->items as $item) {
                 // Convert quantity to kg if necessary
-                $quantityInKg = $item['quantity'];
-                if ($item['unit'] === 'ton') {
-                    $quantityInKg *= 1000; // Convert tons to kilograms
-                } elseif ($item['unit'] === 'g') {
-                    $quantityInKg /= 1000; // Convert grams to kilograms
-                }
+               
 
                 // Calculate the total price for the item
-                $itemTotalPrice = $item['price'] * $quantityInKg;
+                $itemTotalPrice = $item['price'] *  $item['quantity'];
 
                 // Calculate TVA if applicable
                 $tvaAmount = 0;
                 if ($tvaRate > 0) {
                     $tvaAmount = $itemTotalPrice * $tvaRate;
+                    $calculAmountTva =  $invoice->amount - $itemTotalPrice;
+                     $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
                 }
 
                 // Deduct item total price and TVA from invoice amounts
@@ -86,12 +82,11 @@ class ReturnController extends Controller
                 $returnItem->invoice_id = $request->invoice_id;
                 $returnItem->product_id = $item['product_id'];
                 $returnItem->quantity = $item['quantity'];
-                $returnItem->unit = $item['unit'];
                 $returnItem->save();
 
                 // Update product quantity in stock in kilograms
                 $product = Product::find($item['product_id']);
-                $product->quantity += $quantityInKg; // Increase stock with converted quantity in kg
+                $product->quantity +=  $item['quantity']; // Increase stock with converted quantity in kg
                 $product->save();
             }
 
@@ -169,22 +164,9 @@ class ReturnController extends Controller
 
 
             
-            // Convert the return quantity to kilograms if necessary
-            $unit = $invoiceItem->unit; // Assuming 'unit' column exists in invoice_items
-            $convertedQuantity = $returnQuantity;
-    
-            switch ($unit) {
-                case 'ton':
-                    $convertedQuantity = $returnQuantity * 1000; // Convert tons to kilograms
-                    break;
-                case 'gram':
-                    $convertedQuantity = $returnQuantity / 1000; // Convert grams to kilograms
-                    break;
-                // kg case or unknown units will use returnQuantity as-is
-            }
-    
+            
             // Increase the stock of the product in kilograms
-            $product->quantity += $convertedQuantity;
+            $product->quantity += $returnQuantity;
             $product->save();
     
             // Decrease the quantity of the invoice item by the original unit quantity
@@ -209,12 +191,16 @@ class ReturnController extends Controller
             $tvaAmount = 0;
             if ($tvaRate > 0) {
                 $tvaAmount = $totalDeduction * $tvaRate;
+
+                $calculAmountTva =  $invoice->amount - $totalDeduction;
+                 $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
             }
 
             // Deduct item total price and TVA from invoice amounts
             $invoice->amount -= $totalDeduction;
-            $invoice->total_amount_with_tva -= ($totalDeduction + $tvaAmount);
+            $invoice->total_amount_with_tva -= ($totalDeduction + $tvaAmount); 
 
+            
             // Adjust final_price if applicable
             if (isset($invoice->final_price)) {
                 $invoice->final_price -= ($totalDeduction + $tvaAmount);
@@ -245,7 +231,6 @@ class ReturnController extends Controller
                 'quantity' => $returnQuantity,
                 'invoice_item_id' => $invoiceItemId,
                 'invoice_id' => $invoiceId,
-                'unit' => $unit,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

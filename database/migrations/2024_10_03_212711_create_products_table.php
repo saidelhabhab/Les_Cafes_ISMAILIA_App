@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->decimal('price', 10, 2);
-            $table->decimal('quantity', 10, 4);
-            $table->enum('unit', ['ton', 'kg', 'g'])->default('kg'); // Add unit column with default 'kg'
+            $table->integer('quantity');
+            $table->enum('unit', ['ton', 'kg', 'g']); // Add unit column with default 'kg'
             $table->string('barcode')->unique();
             $table->string('reference')->unique(); 
             $table->timestamps();

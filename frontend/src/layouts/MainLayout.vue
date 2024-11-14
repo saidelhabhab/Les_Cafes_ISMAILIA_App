@@ -3,9 +3,9 @@
     <header>
       <nav>
         <!-- Logo -->
-        <router-link to="/" class="logo-link">
+        <div  class="logo-link">
           <img src="@/assets/icon2.png" alt="Logo" class="logo" />
-        </router-link>
+        </div>
 
         <!-- Navigation Links -->
         <router-link
@@ -121,8 +121,6 @@ export default {
 
 header {
   background-color: #c7c7c77e;
-
- 
 }
 
 nav {
@@ -135,11 +133,12 @@ nav {
   display: flex;
   align-items: center;
   margin-right: 2rem;
+  margin-left: 2em;
 }
 
 .logo {
-  height: 70px;
-  width: 100px;
+  width: 90px;
+  height: 90px;
 }
 
 nav a {
@@ -152,7 +151,7 @@ nav a {
 }
 
 nav a:hover {
-  background-color: #701a1a;
+  background-color: #5c7475;
   color:#eeebeb;
 }
 

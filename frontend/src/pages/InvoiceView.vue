@@ -80,22 +80,31 @@
                 </tr>
               </thead>
               <tbody>
-                  <!-- Render actual rows -->
-                  <tr
-                    v-for="(item, index) in getItemsForPage(pageIndex)"
-                    :key="index"
-                    :style="{
-                      backgroundColor: 'transparent',
-                      height: getItemsForPage(pageIndex).length < 3 ? '250px' : (index === getItemsForPage(pageIndex).length - 1 ? '200px' : 'auto'),
-                    }"
-                  >
-                    <td>{{ getProductReference(item.product_id) || 'N/A' }}</td>
-                    <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
-                    <td>{{ parseFloat(item.quantity) }} {{ item.unit }}</td>
-                    <td>{{ parseFloat(item.price).toFixed(2) }}</td>
-                    <td>{{ parseFloat(item.total).toFixed(2) }}</td>
-                  </tr>
-                </tbody>
+  <!-- Render actual rows -->
+  <tr
+    v-for="(item, index) in getItemsForPage(pageIndex)"
+    :key="index"
+    :style="{
+      backgroundColor: 'transparent',
+      height:
+        getItemsForPage(pageIndex).length === 1 && index === 0 ? '300px' :
+        getItemsForPage(pageIndex).length === 2 && index === 1 ? '260px' :
+        getItemsForPage(pageIndex).length === 3 && index === 2 ? '240px' :
+        getItemsForPage(pageIndex).length === 4 && index === 3 ? '220px' :
+        getItemsForPage(pageIndex).length === 5 && index === 4 ? '190px' :
+        'auto'
+    }"
+  >
+    <td>{{ getProductReference(item.product_id) || 'N/A' }}</td>
+    <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
+    <td>{{ parseFloat(item.quantity) }}</td>
+    <td>{{ parseFloat(item.price).toFixed(2) }}</td>
+    <td>{{ parseFloat(item.total).toFixed(2) }}</td>
+  </tr>
+</tbody>
+
+
+
 
 
 
@@ -157,9 +166,9 @@
         <button class="btn btn-secondary me-2 btn-print" @click="printInvoice">
           <i class="bi bi-printer me-2"></i> {{ $t('invoices.printInvoice') }}
         </button>
-      <!--  <button class="btn btn-secondary btn-pdf" @click="downloadPDF">
+     <!--    <button class="btn btn-secondary btn-pdf" @click="downloadPDF">
           <i class="bi bi-file-earmark-pdf me-2"></i> {{ $t('invoices.downloadPDF') }}
-        </button> -->
+        </button>  -->
       </div>
   </div>
 </template>
@@ -183,6 +192,7 @@
   /* Existing styles for th, td, tr */
   th, td, tr {
       border: 1px solid #000000;
+      padding: 5px;
   }
 
   th {
@@ -388,7 +398,7 @@ export default {
     const invoiceId = route.params.id; 
     const today = new Date(); 
 
-    const itemsPerPage = 3; // Define itemsPerPage as a constant
+    const itemsPerPage = 5; // Define itemsPerPage as a constant
     
     const totalPages = computed(() => {
       if (!invoice.value || !invoice.value.invoice_items) return 1;
@@ -397,13 +407,14 @@ export default {
 
     const formatDate = (date) => {
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Intl.DateTimeFormat('en-US', options).format(new Date(date));
+      return new Intl.DateTimeFormat('fr-FR', options).format(new Date(date));
     };
 
     const fetchInvoiceData = async () => {
       try {
         const response = await axios.get(`/invoices/${invoiceId}`);
         invoice.value = response.data;
+       // console.log("data => ", invoice.value)
       } catch (error) {
         console.error('Error fetching invoice:', error);
         errorMessage.value = 'Failed to fetch invoice data.';
@@ -414,16 +425,28 @@ export default {
     };
 
     const fetchProducts = async () => {
-      try {
-        const response = await axios.get('/products');
-        products.value = Array.isArray(response.data.items) ? response.data.items : [];
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        Swal.fire('Error', 'Failed to fetch products.', 'error');
-      } finally {
-        productsLoading.value = false; 
-      }
-    };
+        let allProducts = [];
+        let page = 1;
+        let hasMore = true;
+
+        try {
+          while (hasMore) {
+            const response = await axios.get(`/products?page=${page}`);
+            const items = Array.isArray(response.data.items) ? response.data.items : [];
+            allProducts = [...allProducts, ...items];
+
+            // Check if there are more pages
+            hasMore = response.data.items.length > 0; // Adjust if pagination metadata is available
+            page += 1; // Move to the next page
+          }
+
+          products.value = allProducts;
+        // console.log('products.value :', products.value);
+        } catch (error) {
+          console.error('Error fetching products:', error);
+          Swal.fire('Error', 'Failed to fetch products.', 'error');
+        }
+      };
 
     const getProductName = (productId) => {
       if (!Array.isArray(products.value)) return 'Unknown Product'; 
@@ -446,15 +469,42 @@ export default {
     const printInvoice = () => {
       const invoiceElement = document.querySelector('.show-invoice');
       const addressElement = document.querySelector('.address');
-      const originalContent = document.body.innerHTML; 
+      const barcodeElement = document.querySelector('.invoice-barcode'); // Assuming barcode is in this class
+      const originalContent = document.body.innerHTML;
 
       // Add the 'no-print' class to buttons to hide them
       document.querySelectorAll('.btn-print, .btn-pdf').forEach(btn => btn.classList.add('no-print'));
 
       // Check if the address is empty and add 'empty-address' class if it is
       if (addressElement && addressElement.textContent.trim() === '') {
-          addressElement.classList.add('empty-address');
+        addressElement.classList.add('empty-address');
       }
+
+      // If barcode is found, append its name to the invoice
+      let invoiceName = "Invoice";
+      if (barcodeElement) {
+        const barcodeName = barcodeElement.getAttribute('data-barcode-name'); // Assuming the name is in a data attribute
+        const barcodeNameElement = document.createElement('div');
+        barcodeNameElement.classList.add('barcode-name');
+        barcodeNameElement.textContent = `Barcode Name: ${barcodeName}`;
+        
+        // Append the barcode name before the invoice content
+        invoiceElement.prepend(barcodeNameElement);
+
+        // Set the invoice name
+        invoiceName = `Invoice_${barcodeName}`;
+      }
+
+      // Modify the document title to include invoice name for the PDF
+      document.title = invoiceName; // Set the title to the invoice name
+
+      // Optionally, show a visible hint for the user to rename the file
+      const renameHint = document.createElement('div');
+      renameHint.classList.add('rename-hint');
+      renameHint.style.textAlign = "center";
+      renameHint.style.marginBottom = "15px";
+      renameHint.innerHTML = `<strong>Please save the PDF as: ${invoiceName}.pdf</strong>`;
+      document.body.prepend(renameHint);
 
       // Set body content to only the invoice element for printing
       document.body.innerHTML = invoiceElement.outerHTML;
@@ -464,27 +514,30 @@ export default {
 
       // Restore original content and reload page to reset classes
       document.body.innerHTML = originalContent;
-      window.location.reload(); 
+      window.location.reload();
     };
+
+
 
     const downloadPDF = () => {
-      const invoiceElement = document.querySelector('.show-invoice');
+    const invoiceElement = document.querySelector('.show-invoice');
 
-      // Add the class for PDF download
-      invoiceElement.classList.add('pdf-download');
+    // Add the class for PDF download
+    invoiceElement.classList.add('pdf-download');
 
-      const options = {
-          margin: 0.5,
-          filename: 'invoice.pdf',
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-      };
-
-      html2pdf().from(invoiceElement).set(options).save().then(() => {
-          // Remove the class after downloading
-          invoiceElement.classList.remove('pdf-download');
-      });
+    const options = {
+        margin: 0, // Set margin to 0 for no margin
+        filename: 'invoice.pdf',
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, // Use A4 format
     };
+
+    html2pdf().from(invoiceElement).set(options).save().then(() => {
+        // Remove the class after downloading
+        invoiceElement.classList.remove('pdf-download');
+    });
+};
+
 
   
 

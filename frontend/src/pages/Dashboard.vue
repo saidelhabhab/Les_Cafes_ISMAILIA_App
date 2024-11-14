@@ -53,7 +53,7 @@
             <td>{{ invoice.id }}</td>
             <td>{{ invoice.client.name }}</td>
             <td>${{ invoice.total_amount_with_tva }}</td>
-            <td>{{ formatDate(invoice.dueDate) }}</td>
+            <td>{{ formatDate(invoice.due_date) }}</td>
           </tr>
         </tbody>
       </table>
@@ -90,7 +90,7 @@ export default {
         totalClients.value = clientsRes.data.length;
         totalInvoices.value = invoicesRes.data.length;
         totalRevenue.value = totalRevenueRes.data.total_revenue; // Set totalRevenue from API response
-        recentInvoices.value = recentInvoicesRes.data.slice(0, 5);
+        recentInvoices.value = recentInvoicesRes.data.slice(-5);
       } catch (error) {
         console.error("Error fetching metrics:", error);
       }
@@ -99,9 +99,21 @@ export default {
 
 
     const formatDate = (dateStr) => {
-      const options = { year: 'numeric', month: 'short', day: 'numeric' };
-      return new Date(dateStr).toLocaleDateString(undefined, options);
-    };
+  console.log('Received dateStr:', dateStr); // Debugging output to confirm format
+  if (!dateStr) return ''; // Handle empty or undefined date
+
+  const date = Date.parse(dateStr) ? new Date(dateStr) : null;
+  if (!date) {
+    console.error('Invalid Date:', dateStr); // Log if the date is invalid
+    return 'Invalid Date'; // Show user-friendly message
+  }
+
+  // Format date in French
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return date.toLocaleDateString('fr-FR', options);
+};
+
+
 
     onMounted(() => {
       fetchMetrics();
@@ -122,99 +134,99 @@ export default {
 
 
 <style scoped>
-.dashboard-title {
-  text-align: center; /* Center the text */
-  margin-bottom: 2rem; /* Add margin below the title */
-  font-size: 2.5rem; /* Increase font size for visibility */
-  color: #333; /* Text color */
-}
+  .dashboard-title {
+    text-align: center; /* Center the text */
+    margin-bottom: 2rem; /* Add margin below the title */
+    font-size: 2.5rem; /* Increase font size for visibility */
+    color: #333; /* Text color */
+  }
 
-.dashboard-title i {
-  margin-right: 0.5rem; /* Space between icon and text */
-  font-size: 2rem; /* Adjust icon size */
-}
+  .dashboard-title i {
+    margin-right: 0.5rem; /* Space between icon and text */
+    font-size: 2rem; /* Adjust icon size */
+  }
 
-h1 {
-  display: flex;
-  align-items: center;
-}
+  h1 {
+    display: flex;
+    align-items: center;
+  }
 
-h1 i {
-  margin-right: 0.5rem;
-}
+  h1 i {
+    margin-right: 0.5rem;
+  }
 
-.metrics {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
+  .metrics {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
 
-.metric-card {
-  flex: 1;
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
+  .metric-card {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
 
-.metric-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
+  .metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
 
-.metric-card i {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-.recent-activities {
-  margin-top: 2rem;
-}
+  .metric-card i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .recent-activities {
+    margin-top: 2rem;
+  }
 
-.recent-activities h2 {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-}
+  .recent-activities h2 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
 
-.recent-activities h2 i {
-  margin-right: 0.5rem;
-  color: #007bff;
-}
+  .recent-activities h2 i {
+    margin-right: 0.5rem;
+    color: #007bff;
+  }
 
-.recent-activities table {
-  width: 100%;
-  border-collapse: collapse;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
+  .recent-activities table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
 
-.recent-activities th,
-.recent-activities td {
-  border: 1px solid #ddd;
-  padding: 0.75rem;
-  text-align: left;
-}
+  .recent-activities th,
+  .recent-activities td {
+    border: 1px solid #ddd;
+    padding: 0.75rem;
+    text-align: left;
+  }
 
-.recent-activities th {
-  background-color: #f0f0f0;
-  position: relative;
-}
+  .recent-activities th {
+    background-color: #f0f0f0;
+    position: relative;
+  }
 
-.recent-activities th i {
-  margin-right: 0.25rem;
-}
+  .recent-activities th i {
+    margin-right: 0.25rem;
+  }
 
-.recent-activities tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
+  .recent-activities tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
 
-.recent-activities tr:hover {
-  background-color: #f1f1f1;
-}
+  .recent-activities tr:hover {
+    background-color: #f1f1f1;
+  }
 
-.recent-activities td {
-  font-size: 14px;
-}
+  .recent-activities td {
+    font-size: 14px;
+  }
 </style>

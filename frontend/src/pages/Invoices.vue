@@ -5,7 +5,7 @@
     </h1>
 
     <!-- Add New Invoice Button -->
-    <router-link to="/invoices/new" class="btn btn-primary mb-3">
+    <router-link to="/invoices/new" class="btn btn-primary mb-3" style="width: 30%;">
       <i class="bi bi-plus-circle me-2"></i> {{ $t('invoices.addNewInvoice') }}
     </router-link>
     
@@ -61,17 +61,18 @@
               <i class="bi bi-pencil-fill" @click="openModal(invoice)" style="cursor: pointer;"></i>
               </strong>
             </td>
-            <td>
-              <router-link :to="`/invoices/${invoice.id}`" class="btn btn-info btn-sm me-2">
+            <td class="d-inline-flex gap-2">
+              <router-link :to="`/invoices/${invoice.id}`" class="btn btn-info btn-sm">
                 <i class="bi bi-eye-fill"></i> {{ $t('invoices.view') }}
               </router-link>
-              <router-link :to="`/invoices/${invoice.id}/edit`" class="btn btn-warning btn-sm me-2">
+              <router-link :to="`/invoices/${invoice.id}/edit`" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil-fill"></i> {{ $t('invoices.edit') }}
               </router-link>
-              <button class="btn btn-danger btn-sm me-2" @click="removeInvoice(invoice.id)">
+              <button class="btn btn-danger btn-sm" @click="removeInvoice(invoice.id)">
                 <i class="bi bi-trash-fill"></i> {{ $t('invoices.delete') }}
               </button>
             </td>
+
           </tr>
         </tbody>
       </table>

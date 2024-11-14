@@ -71,7 +71,7 @@
             <td>{{ returnItem.id }}</td>
             <td>{{ getProductBarcodeById(returnItem.product_id) }}</td>
             <td>{{ getProductNameById(returnItem.product_id) }}</td>
-            <td>{{ returnItem.quantity }} {{ returnItem.unit }}</td>
+            <td>{{ returnItem.quantity }}</td>
             <td>{{ formatDate(returnItem.created_at) }}</td>
             <td>
               <button class="btn btn-info btn-sm" @click="viewReturn(returnItem.id)">
@@ -118,7 +118,7 @@
           >
             <option disabled value="">{{ $t('returns.selectInvoicePlaceholder') }}</option>
             <option v-for="invoice in invoices" :key="invoice.id" :value="invoice.id">
-              {{ $t('returns.invoiceLabel', { id : invoice.factor_code , name: invoice.client.name, date: formatDate(invoice.created_at) }) }}
+              {{ $t('returns.invoiceLabel', { id : invoice.factor_code , name: invoice.client.name, date: formatDate(invoice.due_date) }) }}
             </option>
           </select>
         </div>
@@ -138,7 +138,7 @@
               :key="product.id"
               :value="product.id"
             >
-              {{ product.name }} ({{ $t('returns.available') }}: {{ product.quantity }} {{ product.unit }})
+              {{ product.name }} ({{ $t('returns.available') }}: {{ product.quantity }})
             </option>
           </select>
 

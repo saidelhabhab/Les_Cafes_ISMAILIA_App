@@ -44,14 +44,14 @@
         <tbody>
           <tr v-for="country in filteredCountries" :key="country.id">
             <td style="text-align: left ; color:green;"> <strong>{{ country.name }}</strong></td>
-            <td>
-              <button @click="showPurchases(country.id)" class="btn btn-show">
+            <td class="d-inline-flex gap-2">
+              <button @click="showPurchases(country.id)" class="btn btn-show btn-sm">
                 <i class="fas fa-eye"></i> {{ $t('purchasePage.showPurchases') }}
               </button>
-              <button @click="editCountry(country)" class="btn btn-edit">
+              <button @click="editCountry(country)" class="btn btn-edit btn-sm">
                 <i class="fas fa-edit"></i> {{ $t('purchasePage.edit') }}
               </button>
-              <button @click="deleteCountry(country.id)" class="btn btn-delete">
+              <button @click="deleteCountry(country.id)" class="btn btn-delete btn-sm">
                 <i class="fas fa-trash"></i> {{ $t('purchasePage.delete') }}
               </button>
             </td>

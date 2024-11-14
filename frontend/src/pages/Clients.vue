@@ -44,14 +44,14 @@
           <td>{{ client.email }}</td>
           <td> <strong>{{ client.final_price }}</strong></td>
           <td> <strong>{{ client.remaining_price }}</strong></td>
-          <td>
-            <button class="btn btn-sm btn-primary me-1 m-1" @click="viewClient(client)">
+          <td  class="d-inline-flex gap-2">
+            <button class="btn btn-sm btn-primary btn-sm" @click="viewClient(client)">
                 <i class="bi bi-eye-fill me-1"></i> 
             </button>
-            <button class="btn btn-sm btn-warning me-1 m-1" @click="editClient(client)">
+            <button class="btn btn-sm btn-warning btn-sm" @click="editClient(client)">
               <i class="bi bi-pencil-fill me-1"></i> 
             </button>
-            <button class="btn btn-sm btn-danger me-1 m-1" @click="deleteClient(client.id)">
+            <button class="btn btn-sm btn-danger btn-sm" @click="deleteClient(client.id)">
               <i class="bi bi-trash-fill me-1"></i> 
             </button>
           </td>

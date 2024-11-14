@@ -51,7 +51,6 @@
             <th>{{  $t('invoices.product') }}</th>
             <th>{{  $t('invoices.price') }}</th>
             <th>{{  $t('invoices.quantity') }}</th>
-            <th>{{  $t('invoices.unit') }}</th>
             <th>{{  $t('invoices.total') }}</th>
             <th>{{  $t('invoices.actions') }}</th>
           </tr>
@@ -72,14 +71,8 @@
               </select>
             </td>
             <td>{{ item.price}}</td>
-            <td><input type="number" v-model.number="item.quantity" class="form-control" min="0" step="0.01" required /></td>
-            <td>
-              <select v-model="item.unit" class="form-select" required>
-                <option value="ton">Ton</option>
-                <option value="kg">Kg</option>
-                <option value="g">Gram</option>
-              </select>
-            </td>
+            <td><input type="number" v-model.number="item.quantity" class="form-control" min="1"  required /></td>
+        
             <td>{{ calculateItemTotal(item) }}</td>
             <td>
               <button type="button" class="btn btn-sm btn-danger" @click="removeInvoiceItem(index)">{{  $t('invoices.remove') }}</button>
@@ -157,10 +150,25 @@
       };
 
       const fetchProducts = async () => {
+        let allProducts = [];
+        let page = 1;
+        let hasMore = true;
+
         try {
-          const response = await axios.get('/products');
-          products.value = response.data.items;
+          while (hasMore) {
+            const response = await axios.get(`/products?page=${page}`);
+            const items = Array.isArray(response.data.items) ? response.data.items : [];
+            allProducts = [...allProducts, ...items];
+
+            // Check if there are more pages
+            hasMore = response.data.items.length > 0; // Adjust if pagination metadata is available
+            page += 1; // Move to the next page
+          }
+
+          products.value = allProducts;
+        // console.log('products.value :', products.value);
         } catch (error) {
+          console.error('Error fetching products:', error);
           Swal.fire('Error', 'Failed to fetch products.', 'error');
         }
       };
@@ -180,7 +188,6 @@
           id: null, // New item, so no ID yet
           product_id: '', 
           quantity: 1, 
-          unit: 'kg', 
           price: 0 });
       };
 
@@ -199,13 +206,9 @@
         }
       };
 
-      const convertToKg = (quantity, unit) => {
-        return unit === 'ton' ? quantity * 1000 : unit === 'g' ? quantity / 1000 : quantity;
-      };
 
       const calculateItemTotal = (item) => {
-        const quantityInKg = convertToKg(item.quantity, item.unit);
-        const total = (quantityInKg * item.price).toFixed(2);
+        const total = (item.quantity * item.price).toFixed(2);
         // Set the total in the item object
         item.total = total; 
         return total;
@@ -218,15 +221,13 @@
 
       const amount = computed(() => {
         return form.value.invoice_items.reduce((acc, item) => {
-          const quantityInKg = convertToKg(item.quantity, item.unit);
-          return acc + quantityInKg * item.price;
+          return acc + item.quantity * item.price;
         }, 0).toFixed(2);
       });
 
       const totalAmountWithTva = computed(() => {
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
-          const quantityInKg = convertToKg(item.quantity, item.unit);
-          return sum + quantityInKg * item.price;
+          return sum + item.quantity * item.price;
         }, 0);
         const tvaAmount = totalAmount * (form.value.tva / 100);
         return (totalAmount + tvaAmount).toFixed(2);

@@ -108,7 +108,6 @@
             <th>{{  $t('invoices.product') }}</th>
             <th>{{  $t('invoices.price') }}</th>
             <th>{{  $t('invoices.quantity') }}</th>
-            <th>{{  $t('invoices.unit') }}</th>
             <th>{{  $t('invoices.total') }}</th>
             <th>{{  $t('invoices.actions') }}</th>
           </tr>
@@ -127,14 +126,7 @@
               <span>{{ item.price.toFixed(2) }}</span>
             </td>
             <td>
-              <input type="number" v-model.number="item.quantity" class="form-control" min="1" step="0.1" required />
-            </td>
-            <td>
-              <select v-model="item.unit" class="form-select" required>
-                <option value="ton">Ton</option>
-                <option value="kg">Kg</option>
-                <option value="g">Gram</option>
-              </select>
+              <input type="number" v-model.number="item.quantity" class="form-control" min="1"  required />
             </td>
             <td>
               {{ calculateTotal(item) }}
@@ -220,7 +212,6 @@
           {
             product_id: '',
             quantity: 0,
-            unit: '', 
             price: 0,
             total: 0,
           },
@@ -276,10 +267,22 @@
 
       // Fetch all products from the API
       const fetchProducts = async () => {
+        let allProducts = [];
+        let page = 1;
+        let hasMore = true;
+
         try {
-          const response = await axios.get('/products');
-          //products.value = response.data;
-          products.value = Array.isArray(response.data.items) ? response.data.items : [];
+          while (hasMore) {
+            const response = await axios.get(`/products?page=${page}`);
+            const items = Array.isArray(response.data.items) ? response.data.items : [];
+            allProducts = [...allProducts, ...items];
+
+            // Check if there are more pages
+            hasMore = response.data.items.length > 0; // Adjust if pagination metadata is available
+            page += 1; // Move to the next page
+          }
+
+          products.value = allProducts;
         // console.log('products.value :', products.value);
         } catch (error) {
           console.error('Error fetching products:', error);
@@ -287,10 +290,10 @@
         }
       };
 
+
       const addInvoiceItem = () => {
         form.value.invoice_items.push({
           product_id: '',
-          unit: ' ', 
           quantity: 1,
           price: 0,
           total: 0,
@@ -312,19 +315,11 @@
         }
       };
       
-      const convertToKg =  (quantity, unit) => {
-        if (unit === 'ton') {
-          return quantity * 1000; // Convert tons to kilograms
-        } else if (unit === 'g') {
-          return quantity / 1000; // Convert grams to kilograms
-        }
-        return quantity; // No conversion needed if unit is kg
-      };
+    
 
       // Calculate total based on converted quantity in kilograms
       const calculateTotal = (item) => {
-        const quantityInKg = convertToKg(item.quantity, item.unit); // Removed "this."
-        return (quantityInKg * item.price).toFixed(2); // Calculate total with kg-based price
+        return (item.quantity * item.price).toFixed(2); // Calculate total with kg-based price
       };
 
 
@@ -346,15 +341,13 @@
 
       const amount = computed(() => {
         return form.value.invoice_items.reduce((acc, item) => {
-          const quantityInKg = convertToKg(item.quantity, item.unit);
-          return acc + quantityInKg * item.price;
+          return acc + item.quantity * item.price;
         }, 0).toFixed(2);
       });
 
       const totalAmountWithTva = computed(() => {
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
-          const quantityInKg = convertToKg(item.quantity, item.unit);
-          return sum + quantityInKg * item.price;
+          return sum + item.quantity * item.price;
         }, 0);
         const tvaAmount = totalAmount * (form.value.tva / 100);
         return (totalAmount + tvaAmount).toFixed(2);
@@ -537,7 +530,6 @@
           invoice_items: form.value.invoice_items.map(item => ({
             product_id: item.product_id,
             quantity: item.quantity,
-            unit: item.unit,
             price: item.price,
           })),
         };
@@ -589,7 +581,6 @@
           invoice_items: [
             {
               product_id: '',
-              unit: '', 
               quantity: 0,
               price: 0,
               total: 0,
@@ -628,7 +619,6 @@
         amount,
         totalAmountWithTva,
         updateItemTotal,
-        convertToKg,
         amountInWordsEN,
         amountInWordsFR,
         amountInWordsAR,

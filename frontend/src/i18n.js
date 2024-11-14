@@ -286,7 +286,7 @@ const messages = {
     profileNav: 'Profil',
     categoriesNav:'Catégories',
     logout: 'Déconnexion',
-    footer: 'Système de gestion des stocks par ',
+    footer: 'Les Cafes ISMAILIA par ',
     titleOfApp: 'Les cafes ISMAILIA',
     analytics: {
         title: 'Tableau de bord analytique',

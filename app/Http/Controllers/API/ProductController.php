@@ -73,9 +73,9 @@ class ProductController extends Controller
         $product = Product::create([
             'name' => $request->name,
             'price' => $request->price,
-            'quantity' => $quantityInKg,
+            'quantity' =>$request->quantity,
             'barcode' => $barcode,
-            'unit' => 'kg', // Always store as 'kg'
+            'unit' => $request->unit,// Always store as 'kg'
             'reference' => $reference // Add two random uppercase words as reference
         ]);
 
@@ -103,8 +103,8 @@ class ProductController extends Controller
         $product->update([
             'name' => $request->name,
             'price' => $request->price,
-            'quantity' => $quantityInKg,
-            'unit' => 'kg', // Always store as 'kg'
+            'quantity' => $request->quantity,
+            'unit' => $request->unit, // Always store as 'kg'
         ]);
 
         return response()->json($product, 200);

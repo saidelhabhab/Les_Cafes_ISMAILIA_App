@@ -52,7 +52,7 @@ class InvoiceController extends Controller
             'invoice_items' => 'required|array|min:1',
             'invoice_items.*.product_id' => 'required|integer|exists:products,id',
             'invoice_items.*.quantity' => 'required|numeric|min:1', // Allow numeric for conversion
-            'invoice_items.*.unit' => 'required|string|in:kg,ton,g', // Validate unit
+           // 'invoice_items.*.unit' => 'nullable|string|in:kg,ton,g', // Validate unit
             'invoice_items.*.price' => 'required|numeric|min:0',
         ]);
 
@@ -134,10 +134,10 @@ class InvoiceController extends Controller
                 $product = Product::findOrFail($item['product_id']);
 
                 // Convert quantity to kilograms based on the unit
-                $quantityInKg = $this->convertToKg($item['quantity'], $item['unit']);
+             //   $quantityInKg = $this->convertToKg($item['quantity'], $item['unit']);
 
                 // Check if there is enough stock
-                if ($product->quantity < $quantityInKg) {
+                if ($product->quantity < $item['quantity']) {
                     throw new \Exception("Not enough stock for product ID: {$item['product_id']}");
                 }
 
@@ -147,13 +147,13 @@ class InvoiceController extends Controller
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'], // Save the converted quantity
                     'price' => $item['price'],
-                    'total' => $quantityInKg * $item['price'], // Calculate total based on kg
-                    'unit' =>  $item['unit']
+                    'total' => $item['quantity'] * $item['price'], // Calculate total based on kg
+                   // 'unit' =>  $item['unit']
 
                 ]);
 
                 // Decrease product quantity
-                $product->quantity -= $quantityInKg;
+                $product->quantity -= $item['quantity'];
                 $product->save();
             }
 
@@ -184,19 +184,19 @@ class InvoiceController extends Controller
      */
 
 
-        private function convertToKg($quantity, $unit)
-        {
-            switch ($unit) {
-                case 'ton':
-                    return $quantity * 1000; // 1 ton = 1000 kg
-                case 'kg':
-                    return $quantity; // already in kg
-                case 'g':
-                    return $quantity / 1000; // convert grams to kg
-                default:
-                    return 0; // handle unknown units
-            }
+    private function convertToKg($quantity, $unit)
+    {
+        switch ($unit) {
+            case 'ton':
+                return $quantity * 1000; // 1 ton = 1000 kg
+            case 'kg':
+                return $quantity; // already in kg
+            case 'g':
+                return $quantity / 1000; // convert grams to kg
+            default:
+                return 0; // handle unknown units
         }
+    }
 
     /**
      * Display the specified invoice.
@@ -243,7 +243,7 @@ class InvoiceController extends Controller
                  'invoice_items' => 'required|array',
                  'invoice_items.*.product_id' => 'required|exists:products,id',
                  'invoice_items.*.quantity' => 'required|numeric',
-                 'invoice_items.*.unit' => 'required|string',
+                // 'invoice_items.*.unit' => 'required|string',
              ]);
      
              // Step 2: Find the invoice
@@ -278,12 +278,12 @@ class InvoiceController extends Controller
                     if ($product) {
                         // Convert quantity to kilograms (if needed)
                         try {
-                            $quantityInKg = $this->convertToKg($oldItem->quantity, $oldItem->unit);
+                           // $quantityInKg = $this->convertToKg($oldItem->quantity, $oldItem->unit);
                             // Log the converted quantity for debugging
-                            Log::info('Converted quantity in kg: ' . $quantityInKg);
+                           // Log::info('Converted quantity in kg: ' . $quantityInKg);
 
                             // Increase product quantity in stock
-                            $product->quantity += $quantityInKg;
+                            $product->quantity += $oldItem->quantity;
                             $product->save();
                             Log::info('Updated product quantity: ' . $product->quantity);
                         } catch (\Exception $e) {
@@ -323,7 +323,7 @@ class InvoiceController extends Controller
                  $item->invoice_id = $invoice->id;
                  $item->product_id = $newItem['product_id'];
                  $item->quantity = $newItem['quantity'];
-                 $item->unit = $newItem['unit'];
+                // $item->unit = $newItem['unit'];
                  $item->price = $newItem['price'];
                  $item->total = $newItem['total'];
                  $item->save();
@@ -332,10 +332,10 @@ class InvoiceController extends Controller
                  $product = Product::find($newItem['product_id']);
                  if ($product) {
                      // Convert quantity to kilograms (if needed)
-                     $quantityInKg = $this->convertToKg($newItem['quantity'], $newItem['unit']);
+                   //  $quantityInKg = $this->convertToKg($newItem['quantity'], $newItem['unit']);
                      
                      // Decrease product quantity in stock
-                     $product->quantity -= $quantityInKg;
+                     $product->quantity -= $newItem['quantity'];
                      $product->save();
                  }
              }

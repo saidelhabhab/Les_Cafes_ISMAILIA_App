@@ -43,17 +43,17 @@
           <td>{{ product.price }}</td>
           <td>{{ product.quantity }}</td>
           <td>{{ product.unit }}</td> <!-- Display Unit -->
-          <td>
-            <button class="btn btn-sm btn-info me-2" @click="showProductDetails(product)">
+          <td class="d-inline-flex gap-2">
+            <button class="btn btn-sm btn-info btn-sm" @click="showProductDetails(product)">
               <i class="bi bi-eye"></i> {{ $t('products.show') }}
             </button>
-            <button class="btn btn-sm btn-warning me-2" @click="editProduct(product)">
+            <button class="btn btn-sm btn-warning btn-sm" @click="editProduct(product)">
               <i class="bi bi-pencil"></i> {{ $t('products.edit') }}
             </button>
-            <button class="btn btn-sm btn-danger me-2" @click="deleteProduct(product.id)">
+            <button class="btn btn-sm btn-danger btn-sm" @click="deleteProduct(product.id)">
               <i class="bi bi-trash"></i> {{ $t('products.delete') }}
             </button>
-            <button class="btn btn-sm btn-success" @click="openAddQuantityModal(product)">
+            <button class="btn btn-sm btn-success btn-sm" @click="openAddQuantityModal(product)">
               <i class="bi bi-plus"></i> Add New Quantity
             </button>
 
@@ -265,7 +265,7 @@ export default {
     const searchTerm = ref('');
     const currentPage = ref(1);
     const totalPages = ref(1);
-    const itemsPerPage = 8;
+    const itemsPerPage = 10;
 
 
     // Fetch products with search and pagination
