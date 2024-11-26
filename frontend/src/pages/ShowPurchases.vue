@@ -113,7 +113,9 @@
                     <th>{{ $t('purchasesShow.quantity') }}</th>
                     <th>{{ $t('purchasesShow.unit') }}</th>
                     <th>{{ $t('purchasesShow.price') }}</th>
-                    <th>{{ $t('purchasesShow.totalPrice1') }}</th>
+                    <th>{{ $t('invoices.amount') }}</th>
+                    <th>{{ $t('invoices.tva') }}</th>
+                    <th>{{ $t('invoices.totalWithTVA') }}</th>
                     <th>{{ $t('purchasesShow.date') }}</th>
                     <th>{{ $t('purchasePage.actions') }}</th>
                 </tr>
@@ -126,16 +128,18 @@
                     <td>{{ purchase.quantity }}</td>
                     <td>{{ purchase.unit }}</td>
                     <td>{{ purchase.price }}</td>
+                    <td>{{ purchase.total_ht }}</td>
+                    <td>{{ purchase.price_tva }}</td>
                     <td>{{ purchase.total_price ? purchase.total_price : (purchase.price * purchase.quantity) }}</td>
                     <td>{{ purchase.purchase_date }}</td>
-                    <td>
-                        <button @click="editPurchase(purchase)" class="btn btn-edit btn-sm m-1">
+                    <td class="d-inline-flex gap-2">
+                        <button @click="editPurchase(purchase)" class="btn btn-edit btn-sm">
                             <i class="fas fa-edit"></i>
-                            {{ $t('purchasesShow.edit') }}
+                            
                         </button>
                         <button @click="deletePurchase(purchase.id)" class="btn btn-delete btn-sm">
                             <i class="fas fa-trash"></i>
-                            {{ $t('purchasesShow.delete') }}
+                           
                         </button>
                     </td>
                 </tr>
@@ -458,7 +462,7 @@ export default {
 
 <style scoped>
     .purchases-container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: auto;
     padding: 20px;
     border-radius: 8px;

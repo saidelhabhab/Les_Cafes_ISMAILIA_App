@@ -54,7 +54,7 @@
               <i class="bi bi-trash"></i> {{ $t('products.delete') }}
             </button>
             <button class="btn btn-sm btn-success btn-sm" @click="openAddQuantityModal(product)">
-              <i class="bi bi-plus"></i> Add New Quantity
+              <i class="bi bi-plus"></i>  {{ $t('products.add_Quantity') }}
             </button>
 
           </td>
@@ -121,7 +121,6 @@
               <div class="mb-3">
                 <label for="unit" class="form-label">{{ $t('products.unit') }}:</label>
                 <select v-model="form.unit" class="form-control" id="unit" required>
-                  <option value="ton">Ton</option>
                   <option value="kg">Kg</option>
                   <option value="g">Gram</option>
                 </select>
@@ -168,7 +167,6 @@
               <div class="mb-3">
                 <label for="unit" class="form-label">{{ $t('products.unit') }}:</label>
                 <select v-model="form.unit" class="form-control" id="unit" required>
-                  <option value="ton">Ton</option>
                   <option value="kg">Kg</option>
                   <option value="g">Gram</option>
                 </select>
@@ -194,8 +192,8 @@
         </div>
         <div class="modal-body">
           <img :src="`http://localhost:8002/storage/barcodes/products/${selectedProduct.barcode}.png`" alt="Barcode" width="150" />
-          <p class="mt-3"><strong>{{ $t('products.name') }}:</strong> {{ selectedProduct.name }}  {{selectedProduct.barcode}} </p>
-          <p><strong>{{ $t('products.price') }}:</strong> ${{ selectedProduct.price }}</p>
+          <p class="mt-3"><strong>{{ $t('products.name') }}:</strong> {{ selectedProduct.name }}  </p>
+          <p><strong>{{ $t('products.price') }}:</strong> {{ selectedProduct.price }} {{ $t('returns.dh') }}</p>
           <p><strong>{{ $t('products.quantity') }}:</strong> {{ selectedProduct.quantity }}  {{ selectedProduct.unit   }}</p>
         </div>
         <div class="modal-footer">
@@ -218,14 +216,7 @@
             <label for="newQuantity">Quantity:</label>
             <input type="number" v-model="newQuantity" required />
           </div>
-          <div class="form-group">
-            <label for="unit">Unit:</label>
-            <select v-model="newUnit" required>
-              <option value="ton">Ton</option>
-              <option value="kg">Kg</option>
-              <option value="g">Gram</option>
-            </select>
-          </div>
+
           <button type="submit" class="submit-btn">Add Quantity</button>
         </form>
       </div>
@@ -252,20 +243,20 @@ export default {
     const selectedProduct = ref(null); // Holds the selected product for viewing
     const showAddQuantityModal = ref(false); // State for Add Quantity modal
     const newQuantity = ref(0); // Quantity input for Add Quantity modal
-    const newUnit = ref('ton'); // Default unit for Add Quantity modal
+    const newUnit = ref('kg'); // Default unit for Add Quantity modal
     
     const form = ref({
       id: null,
       name: '',
       price: 0,
       quantity: 0,
-      unit: 'ton', // Default unit
+      unit: 'kg'
     });
     const errorMessage = ref('');
     const searchTerm = ref('');
     const currentPage = ref(1);
     const totalPages = ref(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 11;
 
 
     // Fetch products with search and pagination
@@ -300,26 +291,31 @@ export default {
 
     // Handle form submission for adding or editing a product
     const handleSubmit = async () => {
-      try {
-       // console.log("Form submitted with data: ", form.value); // Debugging log
-        if (showAddModal.value) {
-          // Create new product
-          await axios.post('/products', form.value);
-          Swal.fire('Success', 'Product added successfully', 'success');
-          console.log("form.value==> " ,form.value)
-        } else if (showEditModal.value) {
-          // Update existing product
-          await axios.put(`/products/${form.value.id}`, form.value);
-          console.log("form.value==> " ,form.value)
-          Swal.fire('Success', 'Product updated successfully', 'success');
-        }
-        closeModal();       // Close modal after operation
-        fetchProducts();     // Refresh the product list
-      } catch (error) {
-        errorMessage.value = error.response?.data?.message || 'Operation failed';
-        Swal.fire('Error', errorMessage.value, 'error');
-      }
-    };
+  try {
+   // console.log("Form submitted with data: ", form.value);
+
+    // Perform API request
+    if (showAddModal.value) {
+      await axios.post('/products', form.value);
+      Swal.fire('Success', 'Product added successfully', 'success');
+    } else if (showEditModal.value) {
+      await axios.put(`/products/${form.value.id}`, form.value);
+      Swal.fire('Success', 'Product updated successfully', 'success');
+    }
+
+    // Close modal and refresh products
+    closeModal();
+    fetchProducts();
+  } catch (error) {
+    console.error('API Error:', error.response?.data || error.message);
+
+    // Display error message
+    const errors = error.response?.data?.errors || {};
+    const messages = Object.values(errors).flat().join('<br>');
+    Swal.fire('Error', messages || 'Operation failed', 'error');
+  }
+};
+
     
     
     // Pre-fill form for editing a product
@@ -380,7 +376,7 @@ export default {
     const closeAddQuantityModal = () => {
       showAddQuantityModal.value = false;
       newQuantity.value = 0; // Reset quantity
-      newUnit.value = 'ton'; // Reset unit to default
+      newUnit.value = ''; // Reset unit to default
     };
 
     // Handle adding quantity to the selected product

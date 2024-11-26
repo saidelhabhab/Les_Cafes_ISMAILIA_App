@@ -18,6 +18,8 @@ class CreatePurchasesTable extends Migration
             $table->date('purchase_date');
             $table->decimal('price', 10, 2);
             $table->decimal('total_price', 10, 2)->nullable();
+            $table->decimal('total_ht', 10, 2)->nullable(); // Nouveau champ pour le Total HT
+            $table->decimal('price_tva', 10, 2)->nullable(); // Nouveau champ pour la TVA
             $table->timestamps();
         });
         

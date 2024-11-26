@@ -60,6 +60,8 @@ const messages = {
         close: 'Close',
         final_price:'Final price',
         remaining_price:'Remaining price',
+        filterRemainingPrice: "customers with outstanding debts"
+
       },
       invoices: {
         title: 'Invoices',
@@ -128,7 +130,7 @@ const messages = {
         total: 'Total',
         total1: 'MONTANT TTC',
         quantity: 'Quantity',
-        quantity1: 'Qty',
+        quantity1: 'QUANTITY',
         category: 'Category',
         subcategory: 'Subcategory',
         selectCategory: 'Select Category',
@@ -143,6 +145,7 @@ const messages = {
         updateProduct: ' Update Product',
         errorMessage: 'An error occurred while saving the product.',
         close: 'Close',
+        add_Quantity:'Add New Quantity'
       },
       returns: {
         title: 'Manage Returns',
@@ -177,7 +180,11 @@ const messages = {
         search : 'Search',
         startDate: 'Start Date',
         endDate: 'End Date',
-        delete: 'delete'
+        delete: 'delete',
+        searchByFactorCode : 'search By Factor Code',
+        enterFactorCode : 'enter Factor Code',
+        factorCode : 'Factor Code',
+        invoiceDetails : 'invoice Details',
       },
       profile: {
         editProfile: 'Edit Profile',
@@ -233,11 +240,11 @@ const messages = {
       },
       purchasesShow:{
         "title": "Purchases for",
-        "year": "Year:",
-        "month": "Month:",
+        "year": "Year",
+        "month": "Month",
         "quantity": "Quantity:",
-        "price": "Price:",
-        "unit": "Unit:",
+        "price": "Price",
+        "unit": "Unit",
         "totalPrice1": "total Price",
         "date": "date",
         "addPurchase": "Add Purchase",
@@ -319,6 +326,7 @@ const messages = {
         close: 'Fermer',
         final_price:'Prix final',
         remaining_price:'Prix restant',
+        filterRemainingPrice: "les clients avec un reste à payer"
       },
       invoices: {
         title: 'Factures',
@@ -340,13 +348,13 @@ const messages = {
         loading2: 'Chargement des détails de la facture...',
         billTo: 'Facturé à :',
         amount: 'Total HT',
-        tva: 'TVA ',
+        tva: 'TVA',
         totalWithTVA: 'Total TTC',
-        signature: 'Signature :',
+        signature: 'Signature',
         printInvoice: 'Imprimer la facture',
         downloadPDF: 'Télécharger le PDF',
         invoiceTitle: 'Arrêtée la présente Facture à la somme TTC de :',
-        paymentType: 'Type de paiement :',
+        paymentType: 'Type de paiement',
         selectPaymentType: 'Sélectionner le type de paiement',
         selectClient: 'Sélectionner un client',
         selectProduct: 'Sélectionner un produit',
@@ -388,7 +396,7 @@ const messages = {
         total: 'Total',
         total1: 'MONTANT TTC',
         quantity: 'Quantité',
-        quantity1: 'Qté',
+        quantity1: 'QUANTITÉ',
         category: 'Catégorie',
         selectCategory: 'Sélectionner une catégorie',
         SearchProductName: 'Recherche par nom de produit',
@@ -403,6 +411,7 @@ const messages = {
         updateProduct: ' Mettre à jour le produit',
         errorMessage: 'Une erreur s\'est produite lors de l\'enregistrement du produit.',
         close: 'Fermer',
+        add_Quantity:'Ajouter nouveau Quantitè'
       },
       returns: {
         title: 'Gérer les retours',
@@ -438,6 +447,10 @@ const messages = {
         startDate:'Date de début',
         endDate:'Date de fin',
         delete: 'Supprimer',
+        searchByFactorCode : 'recherche par code de facteur',
+        enterFactorCode : 'saisir le code du facteur',
+        factorCode : 'Code du facteur',
+        invoiceDetails : 'facteur Details',
       },
       profile: {
         editProfile: 'Modifier le profil',
@@ -493,11 +506,11 @@ const messages = {
       },
       purchasesShow:{
         "title": "Achats pour",
-        "year": "Année:",
-        "month": "Mois:",
-        "quantity": "Quantité:",
-        "price": "Prix:",
-        "unit": "Unité:",
+        "year": "Année",
+        "month": "Mois",
+        "quantity": "Quantité",
+        "price": "Prix",
+        "unit": "Unité",
         "addPurchase": "Ajouter un achat",
         "editPurchase": "Modifier l'achat",
         "delete": "Supprimer",
@@ -630,6 +643,7 @@ const messages = {
         representative:'التعيين',
         page:'صفحة',
         searchClientPlaceholder : 'بحث عن عميل',
+        filterRemainingPrice: "العملاء الذين لديهم ديون مستحقة"
       },
       products: {
         title: 'المنتجات',
@@ -659,6 +673,7 @@ const messages = {
         updateProduct: ' تحديث المنتج',
         errorMessage: 'حدث خطأ أثناء حفظ المنتج.',
         close: 'إغلاق',
+        add_Quantity:'إضافة كمية جديدة'
       },
       returns: {
         title: 'إدارة الإرجاعات',
@@ -694,6 +709,10 @@ const messages = {
         startDate: 'تاريخ البدء',
         endDate: 'تاريخ الانتهاء',
         delete: 'حذف',
+        searchByFactorCode : 'البحث بواسطة رمز فاتورة',
+        enterFactorCode : 'إدخال رمز فاتورة',
+        factorCode : 'فاتورة رمز',
+        invoiceDetails : 'فاتورة تفاصيل',
       },
       profile: {
         editProfile: 'تعديل الملف الشخصي',

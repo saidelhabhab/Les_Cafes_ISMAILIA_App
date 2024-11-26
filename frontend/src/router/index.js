@@ -21,7 +21,7 @@ const ViewReturn = () => import('../pages/ViewReturn.vue');
 const UpdatePassword = () => import('../pages/UpdatePassword.vue'); // Import UpdatePassword
 const Purchases = () => import('../pages/Purchases.vue'); // Import Purchases component
 const ShowPurchases = () => import('../pages/ShowPurchases.vue'); // Import Purchases component
-
+const EmptyInvoice = () =>import('../pages/EmptyInvoice.vue')
 
 
 const routes = [
@@ -60,6 +60,11 @@ const routes = [
         path: 'invoices/new',
         name: 'NewInvoice',
         component: NewInvoice,
+      },
+      {
+        path: '/invoices/empty-invoice',
+        component: EmptyInvoice, 
+        name: 'EmptyInvoice', 
       },
       {
         path: 'invoices/:id',

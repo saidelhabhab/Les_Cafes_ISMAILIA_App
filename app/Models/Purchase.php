@@ -9,7 +9,12 @@ class Purchase extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['country_id', 'year', 'month', 'quantity', 'unit', 'purchase_date', 'price', 'total_price']; // Added 'total_price'
+    protected $fillable = ['country_id', 'year', 'month', 'quantity',
+                  'unit', 'purchase_date', 'price',
+                  'total_price',
+                  'total_ht',  // Total hors taxe
+                  'price_tva' // Montant de la TVA]; // Added 'total_price'
+    ];
 
     public function country()
     {

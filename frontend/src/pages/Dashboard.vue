@@ -23,7 +23,7 @@
       <div class="metric-card bg-info text-white">
         <i class="bi bi-currency-dollar"></i>
         <h3>{{ $t('dashboard.totalRevenue') }}</h3>
-        <p>${{ totalRevenue }}</p>
+        <p>{{ totalRevenue }}  {{ $t('returns.dh') }}</p>
       </div>
     </div>
 
@@ -78,6 +78,8 @@ export default {
 
     const fetchMetrics = async () => {
       try {
+
+        
         const [productsRes, clientsRes, invoicesRes, recentInvoicesRes, totalRevenueRes] = await Promise.all([
           axios.get('/products'),
           axios.get('/clients'),
@@ -86,8 +88,7 @@ export default {
           axios.get('/total-revenue') // Fetch total revenue directly
         ]);
 
-        totalProducts.value = productsRes.data.items.length;
-        totalClients.value = clientsRes.data.length;
+        totalProducts.value = productsRes.data.total || productsRes.data.items.length;        totalClients.value = clientsRes.data.length;
         totalInvoices.value = invoicesRes.data.length;
         totalRevenue.value = totalRevenueRes.data.total_revenue; // Set totalRevenue from API response
         recentInvoices.value = recentInvoicesRes.data.slice(-5);

@@ -10,17 +10,30 @@
     </button>
     
    <!-- Search Input Fields -->
-  <div class="mb-4 d-flex justify-content-center">
-    <div class="input-group me-2" style="width: 300px;">
-      <input type="text" v-model="searchCin" class="form-control" placeholder="Search by CIN" />
+    <div class="mb-4 d-flex justify-content-center align-items-center">
+      <div class="input-group me-2" style="width: 200px;">
+        <input type="text" v-model="searchCin" class="form-control" placeholder="Recherche par CIN" />
+      </div>
+      <div class="input-group me-2" style="width: 200px;">
+        <input type="text" v-model="searchName" class="form-control" placeholder="Recherche par Nom" />
+      </div>
+      <div class="form-check me-2">
+        <input
+          type="checkbox"
+          id="filterRemainingPrice"
+          v-model="filterRemainingPrice"
+          class="form-check-input"
+        />
+        <label for="filterRemainingPrice" class="form-check-label">
+          {{ $t('clients.filterRemainingPrice') }}
+        </label>
+      </div>
+
+      <button class="btn btn-primary" @click="searchClients">
+        <i class="bi bi-search me-1"></i> Search
+      </button>
     </div>
-    <div class="input-group me-2" style="width: 300px;">
-      <input type="text" v-model="searchName" class="form-control" placeholder="Search by Name" />
-    </div>
-    <button class="btn btn-primary" @click="searchClients">
-      <i class="bi bi-search me-1"></i> Search
-    </button>
-  </div>
+
 
 
 
@@ -91,7 +104,7 @@
               <form @submit.prevent="handleSubmit">
                 <div class="mb-3">
                   <label for="cin" class="form-label">{{ $t('clients.cin') }}:</label>
-                  <input type="text" v-model="form.cin" class="form-control" id="cin" required />
+                  <input type="text" v-model="form.cin" class="form-control" id="cin"  />
                 </div>
                 <div class="mb-3">
                   <label for="name" class="form-label">{{ $t('clients.name') }}:</label>
@@ -99,11 +112,11 @@
                 </div>
                 <div class="mb-3">
                   <label for="email" class="form-label">{{ $t('clients.email') }}:</label>
-                  <input type="email" v-model="form.email" class="form-control" id="email" required />
+                  <input type="email" v-model="form.email" class="form-control" id="email"  />
                 </div>
                 <div class="mb-3">
                   <label for="phone" class="form-label">{{ $t('clients.phone') }}:</label>
-                  <input type="tel" v-model="form.phone" class="form-control" id="phone" required />
+                  <input type="tel" v-model="form.phone" class="form-control" id="phone"  />
                 </div>
                 <div class="mb-3">
                   <label for="address" class="form-label">{{ $t('clients.address') }}:</label>
@@ -144,8 +157,8 @@
             <p><strong>{{ $t('clients.email') }}:</strong> {{ selectedClient.email }}</p>
             <p><strong>{{ $t('clients.phone') }}:</strong> {{ selectedClient.phone }}</p>
             <p><strong>{{ $t('clients.address') }}:</strong> {{ selectedClient.address }}</p>
-            <p><strong>{{ $t('clients.final_price') }}:</strong> ${{ selectedClient.final_price }}</p>
-            <p><strong>{{ $t('clients.remaining_price') }}:</strong> ${{ selectedClient.remaining_price }}</p>
+            <p><strong>{{ $t('clients.final_price') }}:</strong> {{ selectedClient.final_price }} Dhs</p>
+            <p><strong>{{ $t('clients.remaining_price') }}:</strong> {{ selectedClient.remaining_price }} Dhs</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="closeModal">{{ $t('clients.close') }}</button>
@@ -157,9 +170,10 @@
 </template>
 
 <script>
-  import { ref, onMounted, computed } from 'vue';
+  import { ref, onMounted, computed, watch } from 'vue';
   import axios from '../services/axios';
   import Swal from 'sweetalert2';
+  import debounce from 'lodash/debounce'; // Import lodash debounce for optimizing search
 
   export default {
     name: 'Clients',
@@ -173,8 +187,12 @@
       const totalPages = computed(() => Math.ceil(filteredClients.value.length / itemsPerPage));
       const showAddModal = ref(false);
       const showEditModal = ref(false);
-      const showViewModal = ref(false); // State to control the visibility of the view modal
-      const selectedClient = ref({});   // Holds the selected client for viewing
+      const showViewModal = ref(false);
+      const selectedClient = ref({});
+      const loading = ref(false); // Loading state
+      const filterRemainingPrice = ref(false); // Add the filter state
+      const selectedClientIds = ref([]); // For bulk delete
+      const errorMessage = ref('');
 
       const form = ref({
         id: null,
@@ -185,16 +203,18 @@
         address: '',
       });
 
-      const errorMessage = ref('');
-
 
       const fetchClients = async () => {
         try {
+          loading.value = true;
           const response = await axios.get('/clients');
           clients.value = response.data;
           updatePaginatedClients();
         } catch (error) {
           console.error(error);
+          Swal.fire('Error', 'Failed to fetch clients.', 'error');
+        } finally {
+          loading.value = false;
         }
       };
 
@@ -202,15 +222,21 @@
         const start = (currentPage.value - 1) * itemsPerPage;
         paginatedClients.value = filteredClients.value.slice(start, start + itemsPerPage);
       };
+    
+
 
       const filteredClients = computed(() => {
         return clients.value.filter(client => {
-          return (
-            client.cin.toLowerCase().includes(searchCin.value.toLowerCase()) &&
-            client.name.toLowerCase().includes(searchName.value.toLowerCase())
-          );
+          const matchesCin = (client.cin || '').includes(searchCin.value); // Handle null cin
+          const matchesName = client.name.toLowerCase().includes(searchName.value.toLowerCase());
+          const matchesRemainingPrice = !filterRemainingPrice.value || client.remaining_price > 0; // Check remaining price if filter is active
+
+          return matchesCin && matchesName && matchesRemainingPrice;
         });
       });
+
+
+
 
       const changePage = (page) => {
         if (page < 1 || page > totalPages.value) return;
@@ -218,13 +244,16 @@
         updatePaginatedClients();
       };
 
-      const searchClients = () => {
-        currentPage.value = 1; // Reset to first page on search
+      const searchClients = debounce(() => {
+        currentPage.value = 1;
         updatePaginatedClients();
-      };
+      }, 300); // Debounced to optimize performance
+
+      watch([searchCin, searchName], searchClients);
 
       const handleSubmit = async () => {
         try {
+          loading.value = true;
           if (showAddModal.value) {
             await axios.post('/clients', form.value);
             Swal.fire('Success', 'Client added successfully!', 'success');
@@ -237,12 +266,14 @@
         } catch (error) {
           errorMessage.value = error.response?.data?.message || 'Operation failed.';
           Swal.fire('Error', errorMessage.value, 'error');
+        } finally {
+          loading.value = false;
         }
       };
 
       const viewClient = (client) => {
-        selectedClient.value = { ...client };  // Set the selected client's data
-        showViewModal.value = true;            // Show the view modal
+        selectedClient.value = { ...client };
+        showViewModal.value = true;
       };
 
       const editClient = (client) => {
@@ -251,38 +282,66 @@
       };
 
       const deleteClient = async (clientId) => {
-      try {
-        const result = await Swal.fire({
-          title: 'Are you sure?',
-          text: 'You won\'t be able to revert this!',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Yes, delete it!',
-          cancelButtonText: 'No, cancel!',
-          reverseButtons: true
-        });
-        
-        if (result.isConfirmed) {
-          await axios.delete(`/clients/${clientId}`);
-          await fetchClients(); // Refresh client list
-          Swal.fire('Deleted!', 'Your client has been deleted.', 'success');
+        try {
+          const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: 'You won\'t be able to revert this!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, cancel!',
+            reverseButtons: true,
+          });
+
+          if (result.isConfirmed) {
+            loading.value = true;
+            await axios.delete(`/clients/${clientId}`);
+            await fetchClients();
+            Swal.fire('Deleted!', 'Your client has been deleted.', 'success');
+          }
+        } catch (error) {
+          Swal.fire('Error', 'There was an error deleting the client.', 'error');
+          console.error(error);
+        } finally {
+          loading.value = false;
         }
-      } catch (error) {
-        Swal.fire('Error', 'There was an error deleting the client.', 'error');
-        console.error(error);
-      }
-    };
+      };
 
+      const bulkDeleteClients = async () => {
+        try {
+          const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: 'You will delete multiple clients!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete all!',
+            cancelButtonText: 'No, cancel!',
+            reverseButtons: true,
+          });
 
-    const closeModal = () => {
-      showAddModal.value = false;
-      showEditModal.value = false;
-      showViewModal.value = false;  // Hide the view modal as well
-      form.value = { id: null, cin: '', name: '', email: '', phone: '', address: '' };
-      selectedClient.value = {};    // Clear the selected client data
-      errorMessage.value = '';
-    };
+          if (result.isConfirmed) {
+            loading.value = true;
+            await axios.post('/clients/bulk-delete', { ids: selectedClientIds.value });
+            await fetchClients();
+            Swal.fire('Deleted!', 'Selected clients have been deleted.', 'success');
+          }
+        } catch (error) {
+          Swal.fire('Error', 'There was an error deleting the clients.', 'error');
+          console.error(error);
+        } finally {
+          selectedClientIds.value = [];
+          loading.value = false;
+        }
+      };
 
+      const closeModal = () => {
+        showAddModal.value = false;
+        showEditModal.value = false;
+        showViewModal.value = false;
+        form.value = { id: null, cin: '', name: '', email: '', phone: '', address: '' };
+        selectedClient.value = {};
+        errorMessage.value = '';
+      };
 
       onMounted(fetchClients);
 
@@ -300,17 +359,22 @@
         viewClient,
         editClient,
         deleteClient,
+        bulkDeleteClients,
         closeModal,
         showAddModal,
         showEditModal,
-        showViewModal,   // Expose the view modal state
-        selectedClient,  // Expose the selected client state
+        showViewModal,
+        selectedClient,
+        selectedClientIds,
+        loading,
         form,
+        filterRemainingPrice, // Return the checkbox state
         errorMessage,
       };
-    }
+    },
   };
 </script>
+
 
 <style scoped>
 

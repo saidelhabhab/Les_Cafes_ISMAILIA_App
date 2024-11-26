@@ -42,7 +42,7 @@ class ReturnController extends Controller
         DB::transaction(function () use ($request) {
             // Fetch the invoice and retrieve TVA rate
             $invoice = Invoice::findOrFail($request->invoice_id);
-            $tvaRate = $invoice->tva /100; // Extracted TVA rate from invoice once
+            $tvaRate = 0.2; // Extracted TVA rate from invoice once
 
             // Fetch the client once to avoid re-fetching in each loop iteration
             $client = Client::findOrFail($invoice->client_id);
@@ -56,20 +56,18 @@ class ReturnController extends Controller
                 $itemTotalPrice = $item['price'] *  $item['quantity'];
 
                 // Calculate TVA if applicable
-                $tvaAmount = 0;
-                if ($tvaRate > 0) {
-                    $tvaAmount = $itemTotalPrice * $tvaRate;
-                    $calculAmountTva =  $invoice->amount - $itemTotalPrice;
-                     $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
-                }
+                $tvaAmount = $itemTotalPrice * $tvaRate;
+                $calculAmountTva =  $invoice->amount - $itemTotalPrice;
+                $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
+
 
                 // Deduct item total price and TVA from invoice amounts
                 $invoice->amount -= $itemTotalPrice;
-                $invoice->total_amount_with_tva -= ($itemTotalPrice + $tvaAmount);
+                $invoice->total_amount_with_tva -= ($itemTotalPrice - $tvaAmount);
 
                 // Adjust final_price if applicable
                 if (isset($invoice->final_price)) {
-                    $invoice->final_price -= ($itemTotalPrice + $tvaAmount);
+                    $invoice->final_price -= ($itemTotalPrice - $tvaAmount);
                 }
 
                 // Accumulate deduction for the client’s final_price
@@ -91,7 +89,7 @@ class ReturnController extends Controller
             }
 
             // Deduct the accumulated amount from the client’s final_price once
-            $client->final_price -= $totalDeductionForClient;
+            $client->final_price -= $itemTotalPrice;
             $client->save();
 
             // Remove deleted invoice items if specified
@@ -125,10 +123,16 @@ class ReturnController extends Controller
     // Remove the specified resource from storage.
     public function destroy($id)
     {
-        $returnItem = ReturnItem::findOrFail($id);
-        $returnItem->delete();
+        try {
+            $returnItem = ReturnItem::findOrFail($id); // Find the item by ID
+            $returnItem->delete(); // Delete the item
 
-        return response()->json(['message' => 'Return deleted successfully'], 200);
+            return response()->json(['message' => 'Item deleted successfully.'], 200); // Success response
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Item not found.'], 404); // Item not found
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to delete the item.'], 500); // General error
+        }
     }
 
 
@@ -180,7 +184,7 @@ class ReturnController extends Controller
     
             // Update the invoice amounts
             $invoice = Invoice::findOrFail($invoiceId);
-            $tvaRate = $invoice->tva /100; // Extracted TVA rate from invoice once
+            $tvaRate = 0.2; // Extracted TVA rate from invoice once
 
             // Fetch the client once to avoid re-fetching in each loop iteration
             $client = Client::findOrFail($invoice->client_id);
@@ -188,31 +192,29 @@ class ReturnController extends Controller
 
 
             // Calculate TVA if applicable
-            $tvaAmount = 0;
-            if ($tvaRate > 0) {
-                $tvaAmount = $totalDeduction * $tvaRate;
 
-                $calculAmountTva =  $invoice->amount - $totalDeduction;
-                 $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
-            }
+            $tvaAmount = $totalDeduction * $tvaRate;
+
+            $calculAmountTva =  $invoice->amount - $totalDeduction;
+            $invoice->amount_tva =  ($calculAmountTva) *  $tvaRate;
 
             // Deduct item total price and TVA from invoice amounts
             $invoice->amount -= $totalDeduction;
-            $invoice->total_amount_with_tva -= ($totalDeduction + $tvaAmount); 
+            $invoice->total_amount_with_tva -= ($totalDeduction - $tvaAmount); 
 
             
             // Adjust final_price if applicable
             if (isset($invoice->final_price)) {
-                $invoice->final_price -= ($totalDeduction + $tvaAmount);
+                $invoice->final_price -= ($totalDeduction - $tvaAmount);
             }
 
             // Accumulate deduction for the client’s final_price
-            $totalDeductionForClient += ($totalDeduction + $tvaAmount);
+            $totalDeductionForClient += ($totalDeduction);
 
             $invoice->save();
 
             // Deduct the accumulated amount from the client’s final_price once
-            $client->final_price -= $totalDeductionForClient;
+            $client->final_price -= $totalDeduction;
             $client->save();
 
     

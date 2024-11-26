@@ -17,19 +17,19 @@
           <!-- Logo at the Center -->
           <br>
           <div class="text-center "style="margin-top: -40px;" >
-            <img src="@/assets/icon2.png" alt="Logo" class="mb-3" width="200" />
+            <img src="@/assets/icon2.png" alt="Logo" class="mb-3" width="150" />
           </div>
 
           <!-- Client Information on the Right -->
             <div class="d-flex justify-content-end" style="margin-top: -33px;" >
               <div class="client-info-container d-flex align-items-start" >
                 <h5 class="client-title me-3">{{ $t('dashboard.client') }} :</h5>
-                <div class="client-info-card card p-3" style="width: 300px; ">
+                <div class="card card-with-border" style="width: 300px;">
                   <div class="client-info-details">
-                    <div class="info-item">{{ invoice.client.name }}</div>
-                    <div class="info-item">{{ invoice.client.address }}</div>
-                    <div class="info-item">{{ invoice.client.phone }}</div>
-                    <div class="info-item">{{ invoice.client.email }}</div>
+                  <div class="info-item">{{ invoice.client.name }}</div>
+                 <!--    <div class="info-item">{{ invoice.client.phone }}</div> -->
+                  <div class="info-item">{{ invoice.client.email }}</div>
+                  <div class="info-item">{{ invoice.client.address }}</div>
                   </div>
                 </div>
               </div>
@@ -46,7 +46,7 @@
           <div class="text-center">
             <table class="table factor">
               <tbody>
-                <tr>
+                <tr calss="factor_tr">
                   <th><strong>{{ $t('invoices.title2') }} Nº</strong></th>
                   <th><strong>{{ $t('invoices.date') }}</strong></th>
                   <th><strong>{{ $t('invoices.representative') }}</strong></th>
@@ -70,72 +70,67 @@
           <!-- Invoice Items Table -->
           <div class="invoice-items" style="margin-top: -10px;">
             <table class="table tt">
-              <thead>
+              <thead class="text-center">
                 <tr>
-                  <th>{{ $t('invoices.reference') }}</th>
+                  <th style="width: 100px;">{{$t('invoices.reference')}}</th>
                   <th>{{ $t('products.designation') }}</th>
-                  <th>{{ $t('products.quantity1') }}</th>
-                  <th>{{ $t('products.price1') }} </th>
-                  <th>{{ $t('products.total1') }} </th>
+                  <th style="width: 100px;">{{ $t('products.quantity1') }}</th>
+                  <th style="width: 140px;">{{ $t('products.price1') }} </th>
+                  <th style="width: 140px;">{{ $t('products.total1') }} </th>
                 </tr>
               </thead>
               <tbody>
-  <!-- Render actual rows -->
-  <tr
-    v-for="(item, index) in getItemsForPage(pageIndex)"
-    :key="index"
-    :style="{
-      backgroundColor: 'transparent',
-      height:
-        getItemsForPage(pageIndex).length === 1 && index === 0 ? '300px' :
-        getItemsForPage(pageIndex).length === 2 && index === 1 ? '260px' :
-        getItemsForPage(pageIndex).length === 3 && index === 2 ? '240px' :
-        getItemsForPage(pageIndex).length === 4 && index === 3 ? '220px' :
-        getItemsForPage(pageIndex).length === 5 && index === 4 ? '190px' :
-        'auto'
-    }"
-  >
-    <td>{{ getProductReference(item.product_id) || 'N/A' }}</td>
-    <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
-    <td>{{ parseFloat(item.quantity) }}</td>
-    <td>{{ parseFloat(item.price).toFixed(2) }}</td>
-    <td>{{ parseFloat(item.total).toFixed(2) }}</td>
-  </tr>
-</tbody>
-
-
-
-
-
-
+                <!-- Render actual rows -->
+                <tr
+                  v-for="(item, index) in getItemsForPage(pageIndex)"
+                  :key="index"
+                  :style="{
+                    backgroundColor: 'transparent',
+                    height:
+                      getItemsForPage(pageIndex).length === 1 && index === 0 ? '320px' :
+                      getItemsForPage(pageIndex).length === 2 && index === 1 ? '280px' :
+                      getItemsForPage(pageIndex).length === 3 && index === 2 ? '260px' :
+                      getItemsForPage(pageIndex).length === 4 && index === 3 ? '240px' :
+                      getItemsForPage(pageIndex).length === 5 && index === 4 ? '200px' :
+                      'auto'
+                  }"
+                >
+                  <td>{{ getProductReference(item.product_id) || 'N/A' }}</td>
+                  <td>{{ getProductName(item.product_id) || 'N/A' }}</td>
+                  <td>{{ parseFloat(item.quantity) }}</td>
+                  <td>{{ parseFloat(item.price).toFixed(2) }}</td>
+                  <td>{{ parseFloat(item.total).toFixed(2) }}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
 
           <!-- Total Section -->
-        <div class="row total-amount">
+        <div class="row total-amount ">
             
             <!-- Title Column (Left) -->
-            <div class="col-md-6 text-start title-tva">
-                <p><strong>{{ $t('invoices.invoiceTitle') }}</strong></p>
-                <div v-if="$i18n.locale === 'en'">{{ invoice.amount_in_words_en }} {{ $t('returns.dh') }}</div>
-                <div v-else-if="$i18n.locale === 'fr'">{{ invoice.amount_in_words_fr }} {{ $t('returns.dh') }}</div>
-                <div v-else>{{ invoice.amount_in_words_ar }} {{ $t('returns.dh') }}</div>
+            <div class="col-sm-6 text-start title-tva p-0" style="margin: 0; --bs-gutter-x: 0 !important;">
+              <p style="font-weight:600">{{ $t('invoices.invoiceTitle') }}</p>
+              <p   v-if="$i18n.locale === 'en'">{{ invoice.amount_in_words_en }} {{ $t('returns.dh') }}</p>
+              <p  v-else-if="$i18n.locale === 'fr'">{{ invoice.amount_in_words_fr }} {{ $t('returns.dh') }}</p>
+              <p v-else>{{ invoice.amount_in_words_ar }} {{ $t('returns.dh') }}</p>
             </div>
 
+
             <!-- Table Column (Right) -->
-            <div class="col-md-6">
+            <div class="col-sm-6">
                 <table class="table table-tva">
                     <tbody>
                         <tr>
                             <th><strong>{{ $t('invoices.amount') }}</strong></th>
-                            <th><strong>{{ $t('invoices.tva') }} ({{ invoice.tva }}%)</strong></th>
+                            <th><strong>{{ $t('invoices.tva') }} (20%)</strong></th>
                             <th><strong>{{ $t('invoices.totalWithTVA') }}</strong></th>
                         </tr>
                         <tr>
-                            <td>{{ invoice.amount }}</td>
+                            <td>{{ invoice.total_amount_with_tva }}</td>
                             <td>{{ invoice.amount_tva }}</td>
-                            <td>{{ invoice.total_amount_with_tva }} {{ $t('returns.dh') }}</td>
+                            <td>{{ invoice.amount }} {{ $t('returns.dh') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -180,7 +175,7 @@
       border-top: 20px solid #683c11;  /* Add top border */
       border-bottom: 20px solid #683c11; /* Add bottom border */
       margin: 0 40px 0 40px;
-      background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.9); /* Adds overlay */
+      background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.7); /* Adds overlay */
       background-blend-mode: lighten; /* Adjust as needed (e.g., overlay, darken) */
       background-size: 600px auto;
 
@@ -205,9 +200,10 @@
 
  
 
-  .factor{
-    width: 70%;
+  .factor {
+    width: 60%;
   }
+
 
   .invoice-page {
       page-break-after: always; /* Ensure each invoice page is printed on a new page */
@@ -215,8 +211,10 @@
 
   /* Existing styles for total-amount, address, etc. */
   .total-amount table {
+      margin-top: -10px !important;
       width: 50%;
       margin-left: auto;
+      margin-right: -10px;
   }
 
 
@@ -247,6 +245,20 @@
   }
 
 
+  .card-with-border {
+    border: 2px solid #000000; /* Customize border width and color */
+    padding: 10px;
+  }
+
+  .info-item{
+    font-weight: bold;
+  }
+
+  .table-tva {
+        width: 90% !important; /* Expand table width */
+        border-collapse: collapse;
+
+    }
 
 
   @media print{
@@ -264,7 +276,7 @@
         flex-direction: column;
         justify-content: space-between;
         box-sizing: border-box;
-        background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.9) !important; /* Adds overlay */
+        background: url("@/assets/icon1.png") center top 195px no-repeat, rgba(255, 255, 255, 0.7) !important; /* Adds overlay */
         background-blend-mode: lighten !important; /* Adjust as needed (e.g., overlay, darken) */
         background-size: 600px auto !important;
 
@@ -330,7 +342,7 @@
 
     /* Ensure table and address alignment */
     .table-tva {
-        width: 50% !important; /* Expand table width */
+        width: 100% !important; /* Expand table width */
         border-collapse: collapse;
         margin: 0 10px 10px 30px;
     }
@@ -363,14 +375,24 @@
     .invoice-items{
       margin-left: 20px !important;
       margin-right: 20px !important;
+      margin-top: -30px !important;
     }
     .factor{
       margin-left: 20px !important;
       margin-right: 20px !important;
+      margin-top: -20px !important;
+      
     }
     .client-info-container{
       margin-right: 20px !important;
+      margin-top: 10px !important;
     }
+
+    .total-amount {
+      margin-top: -20px !important;
+      margin-right: 20px !important;
+
+  }
   }
 
 

@@ -44,7 +44,7 @@
                   <label for="cin" class="form-label">
                     <i class="bi bi-card-text me-2"></i>{{ $t('clients.cin') }}:
                   </label>
-                  <input type="text" v-model="newClient.cin" class="form-control" id="cin" required />
+                  <input type="text" v-model="newClient.cin" class="form-control" id="cin"  />
                 </div>
                 <div class="mb-3">
                   <label for="name" class="form-label">
@@ -56,13 +56,13 @@
                   <label for="email" class="form-label">
                     <i class="bi bi-envelope me-2"></i>{{ $t('clients.email') }}:
                   </label>
-                  <input type="email" v-model="newClient.email" class="form-control" id="email" required />
+                  <input type="email" v-model="newClient.email" class="form-control" id="email"  />
                 </div>
                 <div class="mb-3">
                   <label for="phone" class="form-label">
                     <i class="bi bi-telephone me-2"></i>{{ $t('clients.phone') }}:
                   </label>
-                  <input type="tel" v-model="newClient.phone" class="form-control" id="phone" required />
+                  <input type="tel" v-model="newClient.phone" class="form-control" id="phone"  />
                 </div>
                 <div class="mb-3">
                   <label for="address" class="form-label">
@@ -140,22 +140,25 @@
 
       <button type="button" class="btn btn-secondary" @click="addInvoiceItem">{{  $t('invoices.addItem') }}</button>
 
-      <!-- Amount (Automatically Calculated) -->
+
+            <!-- Total Amount (Automatically Calculated) -->
       <div class="mb-3 mt-3">
-        <label for="amount" class="form-label">{{  $t('invoices.amount') }}</label>
+        <label for="total-amount" class="form-label">{{  $t('invoices.amount') }}</label>
+        <input type="number" v-model.number="totalAmountWithoutTva" class="form-control" id="total-amount" readonly />
+      </div>
+
+      <div class="mb-3">
+        <label for="tva" class="form-label">{{  $t('invoices.tva') }} (20%)</label>
+        <input type="number" v-model.number="tva" class="form-control" id="tva" readonly/>
+      </div>
+
+            <!-- Amount (Automatically Calculated) -->
+      <div class="mb-3 ">
+        <label for="amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
         <input type="number" v-model.number="amount" class="form-control" id="amount" readonly />
       </div>
 
-      <div class="mb-3">
-        <label for="tva" class="form-label">{{  $t('invoices.tva') }}</label>
-        <input type="number" v-model.number="form.tva" class="form-control" id="tva" min="0" step="0.01" />
-      </div>
 
-      <!-- Total Amount (Automatically Calculated) -->
-      <div class="mb-3">
-        <label for="total-amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
-        <input type="number" v-model.number="totalAmountWithTva" class="form-control" id="total-amount" readonly />
-      </div>
 
 
 
@@ -211,7 +214,7 @@
         invoice_items: [
           {
             product_id: '',
-            quantity: 0,
+            quantity: 1,
             price: 0,
             total: 0,
           },
@@ -233,7 +236,7 @@
 
        // Add New Client
        const addNewClient = async () => {
-        if (!newClient.value.cin || !newClient.value.name || !newClient.value.email || !newClient.value.phone) {
+        if (!newClient.value.cin || !newClient.value.name  || !newClient.value.phone) {
             Swal.fire('Error', 'Please fill all client details.', 'error');
             return;
         }
@@ -345,12 +348,16 @@
         }, 0).toFixed(2);
       });
 
-      const totalAmountWithTva = computed(() => {
+      const tva = computed(()=>{
+        return parseFloat(amount.value)*0.2;
+      })
+
+      const totalAmountWithoutTva = computed(() => {
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
           return sum + item.quantity * item.price;
         }, 0);
-        const tvaAmount = totalAmount * (form.value.tva / 100);
-        return (totalAmount + tvaAmount).toFixed(2);
+        const tvaAmount = totalAmount * 0.2;
+        return (totalAmount - tvaAmount).toFixed(2);
       });
 
 
@@ -503,9 +510,9 @@
       };
 
       
-      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(totalAmountWithTva.value));
-      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(totalAmountWithTva.value));
-      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(totalAmountWithTva.value));
+      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(amount.value));
+      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(amount.value));
+      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(amount.value));
 
 
       const handleSubmit = async () => {
@@ -516,7 +523,7 @@
 
         // Set the computed amounts before submission
         form.value.amount = parseFloat(amount.value);
-        form.value.total_amount_with_tva = parseFloat(totalAmountWithTva.value);
+        form.value.total_amount_with_tva = parseFloat(totalAmountWithoutTva.value);
 
         // Set the computed values in the form
         form.value.amount_in_words_en = amountInWordsEN.value;
@@ -581,7 +588,7 @@
           invoice_items: [
             {
               product_id: '',
-              quantity: 0,
+              quantity: 1,
               price: 0,
               total: 0,
             },
@@ -617,7 +624,7 @@
         updatePrice,
         handleSubmit,
         amount,
-        totalAmountWithTva,
+        totalAmountWithoutTva,
         updateItemTotal,
         amountInWordsEN,
         amountInWordsFR,
@@ -626,6 +633,7 @@
         addNewClient,
         showAddModal,
         closeModal,
+        tva
       };
     },
   };

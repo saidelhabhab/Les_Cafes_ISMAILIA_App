@@ -46,7 +46,7 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|numeric|min:0', // Allow decimals for precise conversion
-            'unit'        => 'required|string|in:ton,kg,g', // Add unit validation
+            'unit'        => 'required|string|in:kg,g', // Add unit validation
         ]);
 
         // Convert quantity to kilograms, if needed
@@ -91,7 +91,7 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'price'       => 'required|numeric|min:0',
             'quantity'    => 'required|numeric|min:0', // Allow decimals for precise conversion
-            'unit'        => 'required|string|in:ton,kg,g', // Add unit validation
+            'unit'        => 'required|string|in:kg,g', // Add unit validation
         ]);
 
         $product = Product::findOrFail($id);
@@ -193,17 +193,17 @@ class ProductController extends Controller
         // Validate the incoming request data
         $validated = $request->validate([
             'quantity' => 'required|numeric|min:0',
-            'unit'     => 'required|string|in:ton,kg,g',
+           // 'unit'     => 'nullable|string|in:kg,g',
         ]);
 
         // Find the product
         $product = Product::findOrFail($id);
 
         // Convert quantity to kilograms
-        $quantityInKg = $this->convertToKg($validated['quantity'], $validated['unit']);
+      //  $quantityInKg = $this->convertToKg($validated['quantity'], $validated['unit']);
 
         // Update the product's quantity
-        $product->quantity += $quantityInKg; // Add new quantity to existing quantity
+        $product->quantity += $validated['quantity']; // Add new quantity to existing quantity
         $product->save(); // Save the changes
 
         return response()->json(['message' => 'Quantity added successfully'], 200);

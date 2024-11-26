@@ -82,24 +82,23 @@
       </table>
       <button type="button" class="btn btn-secondary" @click="addInvoiceItem">{{  $t('invoices.addItem') }}</button>
 
-      <div class="mb-3">
-        <label for="amount" class="form-label">{{  $t('invoices.amount') }}</label>
-        <input type="number" :value="amount" class="form-control" id="amount" readonly />
+      <!-- Total Amount (Automatically Calculated) -->
+      <div class="mb-3 mt-3">
+        <label for="total-amount" class="form-label">{{  $t('invoices.amount') }}</label>
+        <input type="number" v-model.number="totalAmountWithoutTva" class="form-control" id="total-amount" readonly />
       </div>
 
       <div class="mb-3">
-        <label for="tva" class="form-label">{{  $t('invoices.tva') }}</label>
-        <input type="number" v-model.number="form.tva" class="form-control" id="tva" min="0" step="0.01" required />
+        <label for="tva" class="form-label">{{  $t('invoices.tva') }} (20%)</label>
+        <input type="number" v-model.number="tva" class="form-control" id="tva" readonly/>
       </div>
 
-      <div class="mb-3">
-        <label for="total-amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
-        <input type="number" :value="totalAmountWithTva" class="form-control" id="total-amount" readonly />
+            <!-- Amount (Automatically Calculated) -->
+      <div class="mb-3 ">
+        <label for="amount" class="form-label">{{  $t('invoices.totalAmount') }}</label>
+        <input type="number" v-model.number="amount" class="form-control" id="amount" readonly />
       </div>
 
-      <div>
-
-</div>
 
 
       <button type="submit" class="btn btn-success mt-3">{{  $t('invoices.updateInvoice') }}</button>
@@ -225,12 +224,16 @@
         }, 0).toFixed(2);
       });
 
-      const totalAmountWithTva = computed(() => {
+      const tva = computed(()=>{
+        return parseFloat(amount.value)*0.2;
+      })
+
+      const totalAmountWithoutTva = computed(() => {
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
           return sum + item.quantity * item.price;
         }, 0);
-        const tvaAmount = totalAmount * (form.value.tva / 100);
-        return (totalAmount + tvaAmount).toFixed(2);
+        const tvaAmount = totalAmount * 0.2;
+        return (totalAmount - tvaAmount).toFixed(2);
       });
 
        // Utility functions to convert numbers to words
@@ -331,9 +334,9 @@
           return words;
       };
       
-      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(totalAmountWithTva.value));
-      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(totalAmountWithTva.value));
-      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(totalAmountWithTva.value));
+      const amountInWordsEN = computed(() => numberToWordsWithDecimalsEN(amount.value));
+      const amountInWordsFR = computed(() => numberToWordsWithDecimalsFR(amount.value));
+      const amountInWordsAR = computed(() => numberToWordsWithDecimalsAR(amount.value));
 
       const handleSubmit = async () => {
         // Calculate totals for all invoice items
@@ -345,7 +348,7 @@
          form.value.amount = amount.value; // Set the computed amount
 
           // Set the total amount with TVA
-         form.value.total_amount_with_tva = totalAmountWithTva.value; // Set this value before sending
+         form.value.total_amount_with_tva = totalAmountWithoutTva.value; // Set this value before sending
 
          // Set the computed values in the form
         form.value.amount_in_words_en = amountInWordsEN.value;
@@ -383,12 +386,13 @@
         calculateItemTotal,
         updatePrice,
         amount,
-        totalAmountWithTva,
+        totalAmountWithoutTva,
         handleSubmit,
         availableProducts,
         amountInWordsEN,
         amountInWordsFR,
         amountInWordsAR,
+        tva
       };
     },
    };

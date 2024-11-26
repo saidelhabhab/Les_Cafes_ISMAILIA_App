@@ -22,13 +22,13 @@ class ClientController extends Controller
     /**
      * Store a newly created client in storage.
      */
-    public function store(Request $request): JsonResponse
+      public function store(Request $request): JsonResponse
     {
         // Validate the incoming request data
         $validated = $request->validate([
-            'cin'    => 'required|string|max:255',
+            'cin'    => 'nullable|string|max:255',
             'name'    => 'required|string|max:255',
-            'email'   => 'required|email|unique:clients,email',
+            'email'   => 'nullable|email|unique:clients,email',
             'phone'   => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'final_price'   => 'nullable|numeric|min:0',
@@ -73,9 +73,9 @@ class ClientController extends Controller
 
         // Validate the incoming request data
         $validated = $request->validate([
-            'cin'    => 'sometimes|required|string|max:255',
+            'cin'    => 'sometimes|nullable|string|max:255',
             'name'    => 'sometimes|required|string|max:255',
-            'email'   => 'sometimes|required|email|unique:clients,email,' . $id,
+            'email'   => 'sometimes|nullable|email|unique:clients,email,' . $id,
             'phone'   => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'final_price'   => 'required|numeric|min:0',

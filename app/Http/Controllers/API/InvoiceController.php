@@ -23,11 +23,14 @@ class InvoiceController extends Controller
      */
     public function index()
     {
-        // List all invoices
-        $invoices = Invoice::with('invoice_items', 'client')->get();
-       
+        // List all invoices with the latest one first
+        $invoices = Invoice::with('invoice_items', 'client')
+            ->orderBy('created_at', 'desc') // Order by creation date in descending order
+            ->get();
+        
         return response()->json($invoices);
     }
+
 
     /**
      * Store a newly created invoice in storage.
@@ -96,10 +99,9 @@ class InvoiceController extends Controller
         }
 
 
-        $amount_tva = 0;
-        if($validatedData['tva']> 0) {
-           $amount_tva =  $validatedData['tva'] *  ( $validatedData['amount'] / 100);
-        }
+
+        $amount_tva =  0.2 * $validatedData['amount'];
+
         
         // Start a transaction
         DB::beginTransaction();
@@ -116,7 +118,7 @@ class InvoiceController extends Controller
                 'factor_code' => $factor_code,
                 'factor_bar_code' => $factor_bar_code_path,
                 'payment_type' => $validatedData['payment_type'],
-                'tva' => $validatedData['tva'] ?? 0,
+                'tva' => 20,
                 'remaining_price' => $validatedData['remaining_price'],
                 'amount_in_words_en' => $validatedData['amount_in_words_en'],
                 'amount_in_words_fr' => $validatedData['amount_in_words_fr'],
@@ -125,7 +127,7 @@ class InvoiceController extends Controller
 
             // Update client financials
             $client = Client::findOrFail($validatedData['client_id']);
-            $client->final_price += $validatedData['total_amount_with_tva'];
+            $client->final_price += $validatedData['amount'];
             $client->remaining_price += $validatedData['remaining_price'];
             $client->save();
 
@@ -250,7 +252,7 @@ class InvoiceController extends Controller
              $invoice = Invoice::findOrFail($id);
 
              // Step 3: Retrieve the old total amount with tva
-             $oldTotalAmountWithTva = $invoice->total_amount_with_tva;
+             $oldTotalAmountWithTva = $invoice->amount;
      
              // Step 4: Update client financials
              $client = Client::findOrFail($validatedData['client_id']);
@@ -259,10 +261,10 @@ class InvoiceController extends Controller
              $client->final_price -= $oldTotalAmountWithTva;
              
              // Increase by new amount with tva
-             $client->final_price += $validatedData['total_amount_with_tva'];
+             $client->final_price += $validatedData['amount'];
      
              // Update remaining price if necessary
-             $client->remaining_price += $validatedData['remaining_price'];
+           //  $client->remaining_price += $validatedData['remaining_price'];
      
              // Save updated client
              $client->save();
@@ -306,14 +308,15 @@ class InvoiceController extends Controller
 
 
             // Step 4: Calculate amount_tva
-            $tva = $validatedData['tva'] ?? 0; // Get TVA or default to 0
+
             $amount = $validatedData['amount']; // Get amount
-            $amount_tva = $amount * ($tva / 100); // Calculate amount_tva
+            $amount_tva = $amount * (0.2); // Calculate amount_tva
 
 
      
              // Step 5: Update the invoice properties
              $invoice->fill($validatedData);
+             $invoice->tva =  20;
              $invoice->amount_tva = $amount_tva; // Store amount_tva in the invoice
              $invoice->save();
      
@@ -456,6 +459,18 @@ class InvoiceController extends Controller
         $invoice->save();
 
         return response()->json(['message' => 'Status updated successfully.']);
+    }
+
+
+    public function findByFactorCode($factorCode)
+    {
+        $invoice = Invoice::with('client', 'invoice_items')->where('factor_code', $factorCode)->first();
+
+        if (!$invoice) {
+            return response()->json(['message' => 'Invoice not found'], 404);
+        }
+
+        return response()->json($invoice);
     }
 
      

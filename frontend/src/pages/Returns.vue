@@ -73,9 +73,12 @@
             <td>{{ getProductNameById(returnItem.product_id) }}</td>
             <td>{{ returnItem.quantity }}</td>
             <td>{{ formatDate(returnItem.created_at) }}</td>
-            <td>
+            <td class="d-inline-flex gap-2">
               <button class="btn btn-info btn-sm" @click="viewReturn(returnItem.id)">
                 <i class="fas fa-eye"></i> {{ $t('returns.view') }}
+              </button>
+              <button class="btn btn-sm btn-danger " @click="confirmDelete(returnItem.id)">
+              <i class="bi bi-trash"></i> {{ $t('products.delete') }}
               </button>
             </td>
           </tr>
@@ -106,7 +109,37 @@
     <!-- Create Return Form -->
     <section class="create-return mb-5">
       <h3 style="color: #225203"><i class="fas fa-plus-circle"></i> {{ $t('returns.createReturn') }}</h3>
+      
+              <!-- Search Invoice By Factor Code -->
+              <div class="form-group">
+          <label for="factorCodeSearch">{{ $t('returns.searchByFactorCode') }}</label>
+          <div class="input-group">
+            <input
+              type="text"
+              id="factorCodeSearch"
+              v-model="searchFactorCode"
+              class="form-control"
+              :placeholder="$t('returns.enterFactorCode')"
+            />
+            <button @click="searchInvoiceByFactorCode" class="btn btn-primary">
+              <i class="fas fa-search"></i> {{ $t('returns.search') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Display Invoice Details (Optional) -->
+        <div v-if="invoiceFound" class="alert alert-info mt-3">
+          <p>
+            <strong>{{ $t('returns.invoiceDetails') }}</strong><br />
+            {{ $t('returns.factorCode') }}: {{ invoiceFound.factor_code }}<br />
+            {{ $t('clients.name') }}: {{ invoiceFound.client.name }}<br />
+            {{ $t('invoices.dueDate') }}: {{ formatDate(invoiceFound.due_date) }}
+          </p>
+        </div>
+
       <form @submit.prevent="handleCreateReturn">
+
+
         <div class="form-group">
           <label for="invoice">{{ $t('returns.selectInvoice') }}</label>
           <select
@@ -114,7 +147,7 @@
             v-model="selectedInvoice"
             class="form-control"
             @change="fetchInvoiceProducts"
-            required
+            
           >
             <option disabled value="">{{ $t('returns.selectInvoicePlaceholder') }}</option>
             <option v-for="invoice in invoices" :key="invoice.id" :value="invoice.id">
@@ -213,6 +246,8 @@ export default {
     const invoices = ref([]);
     const selectedInvoice = ref('');
     const returnItems = ref([{ product_id: '', quantity: 1, invoice_item_id: null }]);
+    const searchFactorCode = ref(''); // To hold the search input value
+    const invoiceFound = ref(null); // To hold the searched invoice details
     const selectedProducts = ref([]);
     const successMessage = ref('');
     const errorMessage = ref('');
@@ -251,6 +286,28 @@ export default {
     };
 
 
+    // Search for an invoice by factor_code
+    const searchInvoiceByFactorCode = async () => {
+      try {
+        if (!searchFactorCode.value) {
+          Swal.fire('Error', 'Please enter an invoice factor code.', 'error');
+          return;
+        }
+
+        const response = await axios.get(`/invoices/factor-code/${searchFactorCode.value}`);
+        if (response.data) {
+          invoiceFound.value = response.data; // Store the found invoice
+          selectedInvoice.value = invoiceFound.value.id; // Set the selected invoice ID
+          fetchInvoiceProducts(); // Fetch products for this invoice
+        } else {
+          Swal.fire('Not Found', 'No invoice found with the provided factor code.', 'warning');
+        }
+      } catch (error) {
+        console.error('Error searching invoice:', error);
+        Swal.fire('Error', error.response?.data?.message || 'An error occurred.', 'error');
+      }
+    };
+
    // Fetch all products and store them
    const fetchProducts = async () => {
       try {
@@ -285,7 +342,7 @@ export default {
           const invoice = response.data;
 
           // Set the TVA rate
-          tvaRate.value = parseFloat(invoice.tva) / 100; // Convert percentage to decimal
+          tvaRate.value = 0.2; // Convert percentage to decimal
 
           // Set the total price with TVA
           totalPriceWithTVA.value = parseFloat(invoice.total_amount_with_tva);
@@ -363,6 +420,7 @@ export default {
       if (page < 1 || page > totalPages.value) return;
       currentPage.value = page;
     };
+    
 
 
 
@@ -371,6 +429,47 @@ export default {
       fetchInvoices();
       fetchProducts();
     });
+
+
+    const confirmDelete = async (id) => {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won’t be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, cancel",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            // Send DELETE request
+            const response = await axios.delete(`/returns/${id}`);
+
+            // Show success notification
+            Swal.fire({
+              title: "Deleted!",
+              text: response.data.message || "The product has been returned.",
+              icon: "success",
+            });
+
+            // Refresh the page or update data
+            window.location.reload();
+          } catch (error) {
+            // Show error notification
+            const errorMessage =
+              error.response?.data?.message || "Failed to delete the return.";
+            Swal.fire({
+              title: "Error",
+              text: errorMessage,
+              icon: "error",
+            });
+          }
+        }
+      });
+    };
+
 
   
 
@@ -591,6 +690,7 @@ export default {
 
     return {
       returns,
+      confirmDelete,
       invoices,
       clearSearch,
       selectedInvoice,
@@ -622,6 +722,9 @@ export default {
       itemsPerPage,
       changePage,
       clearSearch,
+      searchFactorCode,
+      invoiceFound,
+      searchInvoiceByFactorCode,
     };
   },
 };

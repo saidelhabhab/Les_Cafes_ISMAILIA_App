@@ -59,6 +59,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
     Route::get('/total-revenue', [InvoiceController::class, 'getTotalRevenue']);
     Route::put('/invoices/changeStatus/{id}', [InvoiceController::class, 'updateStatus']);
+    Route::get('/invoices/factor-code/{factorCode}', [InvoiceController::class, 'findByFactorCode']);
+
 
     Route::apiResource('/returns', ReturnController::class);
     Route::post('/return-quantity', [ReturnController::class, 'returnToStock']);
@@ -80,6 +82,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('purchases/{id}', [PurchaseController::class, 'update']);
     Route::delete('purchases/{id}', [PurchaseController::class, 'destroy']);
     Route::get('/purchases/{id}', [PurchaseController::class, 'show']);
+
 
 
 

@@ -40,61 +40,80 @@ class PurchaseController extends Controller
             'country_id' => 'required|exists:countries,id',
             'year' => 'required|integer',
             'month' => 'required|integer|min:1|max:12',
-            'quantity' => 'required|numeric|min:0', // Added min:0 for quantity
+            'quantity' => 'required|numeric|min:0', // Quantité minimum : 0
             'unit' => 'required|string|in:ton,kg,g',
-            'price' => 'required|numeric|min:0', // Validate price
+            'price' => 'required|numeric|min:0', // Prix minimum : 0
             'purchase_date' => 'required|date',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
-        // Calculate total price
-        $totalPrice = $request->input('quantity') * $request->input('price');
-
-        // Create a new purchase with the total_price included
-        $purchase = Purchase::create(array_merge($request->all(), ['total_price' => $totalPrice]));
-        
+    
+        // Calcul des montants
+        $quantity = $request->input('quantity');
+        $price = $request->input('price');
+        $totalPrice = $quantity * $price; // Total hors taxe
+        $priceTVA = $totalPrice * 0.2;    // TVA (20%)
+        $totalHT = $totalPrice - $priceTVA; // Total TTC
+    
+        // Créer l'achat avec les champs calculés
+        $purchase = Purchase::create(array_merge($request->all(), [
+            'total_ht' => $totalHT,
+            'price_tva' => $priceTVA,
+            'total_price' => $totalPrice
+        ]));
+    
         return response()->json($purchase, 201);
     }
+    
 
     public function update(Request $request, $id)
     {
-        // Validate the incoming request
+        // Validation des données entrantes
         $validator = Validator::make($request->all(), [
             'year' => 'required|integer|between:2000,2100',
             'month' => 'required|integer|between:1,12',
             'quantity' => 'required|numeric|min:0',
             'unit' => 'required|in:ton,kg,g',
-            'price' => 'required|numeric|min:0', // Validate price
+            'price' => 'required|numeric|min:0', // Validation du prix
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Find the purchase by ID
+        // Rechercher l'achat par ID
         $purchase = Purchase::find($id);
 
         if (!$purchase) {
             return response()->json(['error' => 'Purchase not found.'], 404);
         }
 
-        // Update the purchase details
-        $purchase->year = $request->input('year'); // Changed from 'selectedYear' to 'year'
-        $purchase->month = $request->input('month'); // Changed from 'selectedMonth' to 'month'
+        // Mettre à jour les détails de l'achat
+        $purchase->year = $request->input('year');
+        $purchase->month = $request->input('month');
         $purchase->quantity = $request->input('quantity');
         $purchase->unit = $request->input('unit');
-        $purchase->price = $request->input('price'); // Update price
+        $purchase->price = $request->input('price');
 
-        // Calculate total price on update
-        $purchase->total_price = $purchase->quantity * $purchase->price; 
+        // Calcul du Total HT, TVA et du Total TTC
+        $totalPrice = $purchase->quantity * $purchase->price; // Total hors taxe
+        $priceTVA = $totalPrice * 0.2; // TVA (20%)
+        $totalHT = $totalPrice - $priceTVA; // Total TTC
+
+        $purchase->total_ht = $totalHT;
+        $purchase->price_tva = $priceTVA;
+        $purchase->total_price = $totalPrice;
 
         $purchase->save();
 
-        return response()->json(['message' => 'Purchase updated successfully!', 'purchase' => $purchase], 200);
+        return response()->json([
+            'message' => 'Purchase updated successfully!',
+            'purchase' => $purchase
+        ], 200);
     }
+
 
 
 

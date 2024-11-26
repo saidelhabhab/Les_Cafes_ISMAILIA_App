@@ -4,10 +4,18 @@
       <i class="bi bi-receipt me-2"></i> {{ $t('invoices.title') }}
     </h1>
 
-    <!-- Add New Invoice Button -->
-    <router-link to="/invoices/new" class="btn btn-primary mb-3" style="width: 30%;">
-      <i class="bi bi-plus-circle me-2"></i> {{ $t('invoices.addNewInvoice') }}
-    </router-link>
+    <!-- Flex container for buttons -->
+    <div class="d-flex justify-content-between mb-3">
+      <!-- First Add New Invoice Button -->
+      <router-link to="/invoices/new" class="btn btn-primary" style="width: 30%;">
+        <i class="bi bi-plus-circle me-2"></i> {{ $t('invoices.addNewInvoice') }}
+      </router-link>
+
+      <!-- Second Add New Invoice Button -->
+      <router-link to="/invoices/empty-invoice" class="btn btn-info" style="width: 30%;">
+        <i class="bi bi-file-earmark-plus me-2"></i> Ajouter une facteur vide
+      </router-link>
+    </div>
     
      <!-- Search by Client -->
      <div class="mb-3 search-container">
@@ -53,7 +61,7 @@
           <tr v-for="invoice in paginatedInvoices" :key="invoice.id">
             <td>{{ invoice.factor_code }}</td>
             <td style="color:maroon;"> <strong>{{ invoice.client?.name || 'N/A' }}</strong></td>
-            <td><strong> {{ parseFloat(invoice.total_amount_with_tva).toFixed(2) }} {{ $t('returns.dh') }} </strong></td>
+            <td><strong> {{ parseFloat(invoice.amount).toFixed(2) }} {{ $t('returns.dh') }} </strong></td>
             <td>{{ new Date(invoice.due_date).toLocaleDateString() }}</td>
             <td style="color:green"> 
               <strong>
