@@ -69,8 +69,31 @@ class InvoiceController extends Controller
         $attempt = 0;
         $factor_code = null;
 
+        // Récupérer l'année actuelle
+        $year = date('Y');
+
+        // Trouver le dernier factor_code enregistré pour cette année
+        $lastInvoice = Invoice::where('factor_code', 'like', "{$year}%")
+            ->orderBy('factor_code', 'desc')
+            ->first();
+
+        // Déterminer le prochain numéro
+        if ($lastInvoice) {
+            // Extraire le numéro et l'incrémenter
+            $lastNumber = (int) substr($lastInvoice->factor_code, -6);
+            $nextNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        } else {
+            // Si aucun code pour cette année, commencer à 000001
+            $nextNumber = '000001';
+        }
+
+        
+
+
         do {
-            $factor_code = Str::upper(Str::random(10, '0123456789')); // Generates a random uppercase string of length 10
+         // Générer le factor_code sous le format YYYY000001
+
+            $factor_code = $year . $nextNumber;
             $exists = Invoice::where('factor_code', $factor_code)->exists();
             $attempt++;
             if ($attempt > $maxAttempts) {
@@ -100,7 +123,15 @@ class InvoiceController extends Controller
 
 
 
-        $amount_tva =  0.2 * $validatedData['amount'];
+
+        $tauxTVA = 20; // TVA en pourcentage
+        $ttc = $validatedData['amount']; // Montant TTC fourni
+
+        // Calcul du montant HT
+        $ht = $ttc / (1 + ($tauxTVA / 100));
+
+        // Calcul du montant TVA
+        $amount_tva = $ttc - $ht;
 
         
         // Start a transaction
@@ -246,10 +277,45 @@ class InvoiceController extends Controller
                  'invoice_items.*.product_id' => 'required|exists:products,id',
                  'invoice_items.*.quantity' => 'required|numeric',
                 // 'invoice_items.*.unit' => 'required|string',
+                'factor_code' => 'required|numeric|unique:invoices,factor_code,'.$id,
+
              ]);
+
+            // Vérification si le code factor_code existe déjà (autre que l'ID actuel)
+            $existingInvoice = Invoice::where('factor_code', $request->factor_code)
+            ->where('id', '!=', $id)
+            ->first();
+
+            if ($existingInvoice) {
+            return response()->json(['error' => 'Le code factor existe déjà. Veuillez en choisir un autre.'], 422);
+            }
+
      
              // Step 2: Find the invoice
              $invoice = Invoice::findOrFail($id);
+
+             // Supprimer l'ancien code-barres s'il existe
+            if ($invoice->factor_bar_code) {
+                Storage::delete($invoice->factor_bar_code);
+            }
+        
+            // Générer le nouveau code-barres
+            try {
+                $generator = new BarcodeGeneratorPNG();
+                $image = $generator->getBarcode($request->factor_code, $generator::TYPE_CODE_128);
+        
+                // Définir un nom de fichier unique
+                $barcodeFileName = 'barcodes/invoices/' . $request->factor_code . '.png';
+                Storage::put($barcodeFileName, $image);
+        
+                // Mettre à jour le chemin du code-barres
+                $invoice->factor_bar_code = $barcodeFileName;
+            } catch (\Exception $e) {
+                Log::error('Échec de la génération du code-barres : ' . $e->getMessage());
+                Log::error($e->getTraceAsString());
+                return response()->json(['error' => 'Échec de la génération du code-barres. Veuillez réessayer.'], 500);
+            }
+        
 
              // Step 3: Retrieve the old total amount with tva
              $oldTotalAmountWithTva = $invoice->amount;
@@ -309,8 +375,14 @@ class InvoiceController extends Controller
 
             // Step 4: Calculate amount_tva
 
-            $amount = $validatedData['amount']; // Get amount
-            $amount_tva = $amount * (0.2); // Calculate amount_tva
+            $tauxTVA = 20; // TVA en pourcentage
+            $ttc = $validatedData['amount']; // Montant TTC fourni
+
+            // Calcul du montant HT
+            $ht = $ttc / (1 + ($tauxTVA / 100));
+
+            // Calcul du montant TVA
+            $amount_tva = $ttc - $ht;
 
 
      
@@ -407,7 +479,7 @@ class InvoiceController extends Controller
         ]);
 
         // Get total invoice amounts grouped by month for the specified year
-        $monthlyData = Invoice::select(DB::raw('SUM(total_amount_with_tva) as total_amount'), DB::raw('MONTH(due_date) as month'))
+        $monthlyData = Invoice::select(DB::raw('SUM(amount) as total_amount'), DB::raw('MONTH(due_date) as month'))
             ->whereYear('due_date', $year) // Specify year from request
             ->groupBy('month')
             ->orderBy('month')
@@ -422,7 +494,7 @@ class InvoiceController extends Controller
 
         // Calculate total amount for the selected year
         $totalAmount = Invoice::whereYear('due_date', $year)
-            ->sum('total_amount_with_tva'); // Adjust field name if necessary
+            ->sum('amount'); // Adjust field name if necessary
 
         // Return both monthly data and total amount
         return response()->json([
@@ -446,7 +518,7 @@ class InvoiceController extends Controller
     public function getTotalRevenue()
     {
           // Sum the 'total_amount_with_tva' column
-          $totalRevenue = Invoice::sum('total_amount_with_tva');
+          $totalRevenue = Invoice::sum('amount');
         
           // Return the result (you can return it to the view or API response)
           return response()->json(['total_revenue' => $totalRevenue]);

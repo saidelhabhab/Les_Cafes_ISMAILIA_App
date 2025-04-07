@@ -356,8 +356,12 @@
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
           return sum + item.quantity * item.price;
         }, 0);
-        const tvaAmount = totalAmount * 0.2;
-        return (totalAmount - tvaAmount).toFixed(2);
+
+
+        const tauxTVA = 20; // 20% de TVA
+        const totalHT = totalAmount / (1 + tauxTVA / 100);
+
+        return totalHT.toFixed(2);
       });
 
 

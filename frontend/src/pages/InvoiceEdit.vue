@@ -15,6 +15,12 @@
       </div>
 
       <div class="mb-3">
+        <label for="factor_code" class="form-label">{{  $t('returns.factorCode') }}</label>
+        <input type="number" v-model="form.factor_code" class="form-control" id="factor_code" required />
+      </div>
+
+
+      <div class="mb-3">
         <label for="status" class="form-label">{{  $t('invoices.status') }}</label>
         <select v-model="form.status" class="form-select" id="status" required>
           <option disabled value="">{{  $t('invoices.selectStatus') }}</option>
@@ -224,16 +230,21 @@
         }, 0).toFixed(2);
       });
 
-      const tva = computed(()=>{
-        return parseFloat(amount.value)*0.2;
-      })
+        // Calcul de la TVA
+      const tva = computed(() => {
+        return parseFloat(amount.value - totalAmountWithoutTva.value).toFixed(2);
+      });
+
+
 
       const totalAmountWithoutTva = computed(() => {
         const totalAmount = form.value.invoice_items.reduce((sum, item) => {
           return sum + item.quantity * item.price;
         }, 0);
-        const tvaAmount = totalAmount * 0.2;
-        return (totalAmount - tvaAmount).toFixed(2);
+        const tauxTVA = 20; // 20% de TVA
+        const totalHT = totalAmount / (1 + tauxTVA / 100);
+
+        return totalHT.toFixed(2);
       });
 
        // Utility functions to convert numbers to words
@@ -364,8 +375,12 @@
           // Use router.push instead of this.$router.push
           router.push({ name: 'Invoices' });
         } catch (error) {
-          console.error("Update Error:", error); // Log error for debugging
-          errorMessage.value = error.response?.data?.error || 'Failed to update invoice. Please check your input.';
+          console.error("Erreur de mise à jour :", error);
+          if (error.response && error.response.status === 422) {
+            Swal.fire('Erreur', error.response.data.error, 'error');
+          } else {
+            errorMessage.value = error.response?.data?.error || 'Échec de la mise à jour. Veuillez vérifier vos entrées.';
+          }
         }
       };
 

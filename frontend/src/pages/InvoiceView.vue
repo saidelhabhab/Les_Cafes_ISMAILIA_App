@@ -58,7 +58,7 @@
                     <div>{{ invoice.factor_code }}</div> </small> 
                   </td>
                   <td>
-                    <p>{{ formatDate(today) }}</p>
+                    <p>{{ formatDate(invoice.due_date) }}</p>
                   </td>
                   <td></td>
                   <td>{{ pageIndex }}</td>
